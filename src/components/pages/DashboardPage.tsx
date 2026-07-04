@@ -121,6 +121,13 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
     };
   }, [filteredAppointments]);
 
+  const welcomeUser = useMemo(() => {
+    if (selectedBranchId === "all") return "Administrator";
+    // Clean up the prefix "Maruthi Pet Clinic - " from branch name if present to keep it short and elegant
+    const rawName = branchMap[selectedBranchId] || "Branch Team";
+    return rawName.replace(/^Maruthi\s+Pet\s+Clinic\s*-\s*/i, "");
+  }, [selectedBranchId, branchMap]);
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Premium Hero Welcome Banner */}
@@ -134,7 +141,7 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
               <Sparkles size={12} className="animate-pulse" />
               Live Workspace
             </span>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight">{timeGreeting}, Administrator</h2>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight">{timeGreeting}, {welcomeUser}</h2>
             <p className="text-teal-100/80 text-sm font-semibold max-w-xl">
               Manage appointments, verify active vet clinics data feeds, and monitor operations metrics across branches in real-time.
             </p>

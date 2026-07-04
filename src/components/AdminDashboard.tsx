@@ -287,14 +287,10 @@ export function AdminDashboard() {
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-              {/* Branch Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Branch:</span>
-                {isBranchDashboard ? (
-                  <span className="rounded-lg border border-teal-100 bg-white px-3 py-2 text-sm font-bold text-clinic-teal">
-                    {selectedBranch ? `${selectedBranch.name} (${selectedBranch.city})` : "Branch loading..."}
-                  </span>
-                ) : (
+              {/* Branch Selector (Only for Super Admin, hidden on Branch Manager dashboard) */}
+              {!isBranchDashboard && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Branch:</span>
                   <select
                     value={selectedBranchId}
                     onChange={(e) => setSelectedBranchId(e.target.value)}
@@ -307,8 +303,8 @@ export function AdminDashboard() {
                       </option>
                     ))}
                   </select>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
