@@ -9,30 +9,88 @@ interface BranchesPageProps {
   copyBranchDashboardUrl: (id: string) => void;
 }
 
-const CITIES = [
-  "Hyderabad",
-  "Bangalore",
-  "Chennai",
-  "Theni",
-  "Coimbatore",
-  "Madurai",
-  "Kochi",
-  "Mumbai",
-  "Delhi",
-  "Pune",
-  "Kolkata"
-];
+// Comprehensive State & City Database of India
+const STATE_CITY_DB: Record<string, string[]> = {
+  "Andhra Pradesh": [
+    "Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", 
+    "Tirupati", "Rajahmundry", "Kakinada", "Kadapa", "Anantapur", 
+    "Eluru", "Vizianagaram", "Ongole", "Chittoor", "Machilipatnam"
+  ],
+  "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat", "Tawang", "Ziro"],
+  "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", "Bongaigaon"],
+  "Bihar": [
+    "Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", 
+    "Arrah", "Bihar Sharif", "Sasaram", "Munger", "Begusarai", "Katihar"
+  ],
+  "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Rajnandgaon", "Jagdalpur", "Ambikapur"],
+  "Delhi": ["New Delhi", "Delhi Cantt", "Dwarka", "Rohini", "South Delhi", "North Delhi", "East Delhi", "West Delhi"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda"],
+  "Gujarat": [
+    "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", 
+    "Junagadh", "Gandhinagar", "Anand", "Nadiad", "Morbi", "Mehsana", "Bharuch"
+  ],
+  "Haryana": [
+    "Faridabad", "Gurugram", "Panipat", "Ambala", "Yamunanagar", "Rohtak", 
+    "Hisar", "Karnal", "Sonipat", "Panchkula", "Sirsa", "Bahadurgarh"
+  ],
+  "Himachal Pradesh": ["Shimla", "Dharamshala", "Solan", "Mandi", "Bilaspur", "Una", "Hamirpur"],
+  "Jammu & Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Kathua", "Sopore", "Udhampur"],
+  "Jharkhand": ["Jamshedpur", "Dhanbad", "Ranchi", "Bokaro Steel City", "Deoghar", "Hazaribagh", "Giridih", "Phusro"],
+  "Karnataka": [
+    "Bangalore", "Hubli-Dharwad", "Mysore", "Gulbarga", "Belgaum", "Mangalore", 
+    "Davanagere", "Bellary", "Shimoga", "Tumkur", "Bijapur", "Udupi", "Bidar", "Hospet"
+  ],
+  "Kerala": [
+    "Kochi", "Thiruvananthapuram", "Kozhikode", "Kollam", "Thrissur", "Alappuzha", 
+    "Palakkad", "Kannur", "Kottayam", "Kasaragod", "Malappuram", "Thalassery"
+  ],
+  "Madhya Pradesh": [
+    "Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Dewas", 
+    "Satna", "Ratlam", "Rewa", "Katni", "Singrauli", "Burhanpur", "Khandwa"
+  ],
+  "Maharashtra": [
+    "Mumbai", "Pune", "Nagpur", "Thane", "Pimpri-Chinchwad", "Nashik", 
+    "Kalyan-Dombivli", "Vasai-Virar", "Aurangabad", "Navi Mumbai", "Solapur", 
+    "Mira-Bhayandar", "Kolhapur", "Amravati", "Nanded", "Sangli", "Jalgaon", "Akola"
+  ],
+  "Manipur": ["Imphal", "Thoubal", "Kakching"],
+  "Meghalaya": ["Shillong", "Tura", "Jowai"],
+  "Mizoram": ["Aizawl", "Lunglei", "Champhai"],
+  "Nagaland": ["Dimapur", "Kohima", "Mokokchung"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Brahmapur", "Sambalpur", "Puri", "Balasore", "Bhadrak", "Baripada"],
+  "Puducherry": ["Puducherry", "Karaikal", "Ozhukarai"],
+  "Punjab": [
+    "Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", 
+    "Hoshiarpur", "Pathankot", "Moga", "Abohar", "Phagwara"
+  ],
+  "Rajasthan": [
+    "Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur", "Bhilwara", 
+    "Alwar", "Sikar", "Sri Ganganagar", "Bharatpur", "Pali", "Barmer", "Sujangarh"
+  ],
+  "Sikkim": ["Gangtok", "Namchi", "Gyalshing"],
+  "Tamil Nadu": [
+    "Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tiruppur", 
+    "Erode", "Vellore", "Thoothukudi", "Tirunelveli", "Theni", "Nagercoil", 
+    "Thanjavur", "Dindigul", "Varanasi", "Kanchipuram", "Karur", "Hosur", "Ambur"
+  ],
+  "Telangana": [
+    "Hyderabad", "Warangal", "Nizamabad", "Khammam", "Karimnagar", "Ramagundam", 
+    "Mahbubnagar", "Nalgonda", "Adilabad", "Suryapet", "Miryalaguda"
+  ],
+  "Tripura": ["Agartala", "Dharmanagar", "Udaipur", "Kailasahar"],
+  "Uttar Pradesh": [
+    "Lucknow", "Kanpur", "Ghaziabad", "Agra", "Meerut", "Varanasi", "Prayagraj", 
+    "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Gorakhpur", "Noida", 
+    "Greater Noida", "Jhansi", "Firozabad", "Muzaffarnagar", "Mathura", "Lalitpur"
+  ],
+  "Uttarakhand": ["Dehradun", "Haridwar", "Haldwani", "Roorkee", "Rudrapur", "Kashipur", "Rishikesh"],
+  "West Bengal": [
+    "Kolkata", "Howrah", "Siliguri", "Asansol", "Durgapur", "Bardhaman", 
+    "Malda", "Baharampur", "Kharagpur", "Jalpaiguri", "Kharagpur", "Darjeeling"
+  ]
+};
 
-const STATES = [
-  "Telangana",
-  "Karnataka",
-  "Tamil Nadu",
-  "Maharashtra",
-  "Delhi",
-  "West Bengal",
-  "Kerala",
-  "Andhra Pradesh"
-];
+const STATES = Object.keys(STATE_CITY_DB).sort();
 
 export function BranchesPage({
   branches,
@@ -42,6 +100,8 @@ export function BranchesPage({
 }: BranchesPageProps) {
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
+  
+  // Default values
   const [branchForm, setBranchForm] = useState<{
     name: string;
     city: string;
@@ -49,11 +109,23 @@ export function BranchesPage({
     phone: string;
     image: File | null;
     state: string;
-  }>({ name: "", city: CITIES[0], address: "", phone: "", image: null, state: STATES[0] });
+  }>({
+    name: "",
+    state: "Telangana",
+    city: STATE_CITY_DB["Telangana"][0],
+    address: "",
+    phone: "",
+    image: null
+  });
 
   const [branchSubmitting, setBranchSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // Get active cities list based on chosen state
+  const activeCities = useMemo(() => {
+    return STATE_CITY_DB[branchForm.state] || [];
+  }, [branchForm.state]);
 
   const branchPreviewUrl = useMemo(() => {
     if (branchForm.image) return URL.createObjectURL(branchForm.image);
@@ -66,20 +138,32 @@ export function BranchesPage({
 
   function startEditBranch(branch: Branch) {
     setEditingBranchId(branch._id);
+    const branchState = branch.state || "Telangana";
+    // Check if branch city is in DB list, otherwise add/fallback
+    const stateCities = STATE_CITY_DB[branchState] || [];
+    const branchCity = stateCities.includes(branch.city) ? branch.city : (branch.city || stateCities[0]);
+    
     setBranchForm({
       name: branch.name,
-      city: branch.city || CITIES[0],
+      state: branchState,
+      city: branchCity,
       address: branch.address || "",
       phone: branch.phone || "",
-      image: null,
-      state: branch.state || STATES[0]
+      image: null
     });
     setShowBranchModal(true);
   }
 
   function cancelEditBranch() {
     setEditingBranchId(null);
-    setBranchForm({ name: "", city: CITIES[0], address: "", phone: "", image: null, state: STATES[0] });
+    setBranchForm({
+      name: "",
+      state: "Telangana",
+      city: STATE_CITY_DB["Telangana"][0],
+      address: "",
+      phone: "",
+      image: null
+    });
     setShowBranchModal(false);
   }
 
@@ -131,6 +215,15 @@ export function BranchesPage({
       setError(err.message || "Failed to delete branch");
     }
   }
+
+  const handleStateChange = (selectedState: string) => {
+    const defaultCity = STATE_CITY_DB[selectedState]?.[0] || "";
+    setBranchForm((prev) => ({
+      ...prev,
+      state: selectedState,
+      city: defaultCity
+    }));
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -212,7 +305,7 @@ export function BranchesPage({
                   <select
                     required
                     value={branchForm.state}
-                    onChange={(e) => setBranchForm({ ...branchForm, state: e.target.value })}
+                    onChange={(e) => handleStateChange(e.target.value)}
                     className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
                   >
                     {STATES.map((state) => (
@@ -233,7 +326,7 @@ export function BranchesPage({
                     onChange={(e) => setBranchForm({ ...branchForm, city: e.target.value })}
                     className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
                   >
-                    {CITIES.map((city) => (
+                    {activeCities.map((city) => (
                       <option key={city} value={city}>
                         {city}
                       </option>
