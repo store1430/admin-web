@@ -70,8 +70,8 @@ const STATE_CITY_DB: Record<string, string[]> = {
   "Sikkim": ["Gangtok", "Namchi", "Gyalshing"],
   "Tamil Nadu": [
     "Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tiruppur", 
-    "Erode", "Vellore", "Thoothukudi", "Tirunelveli", "Theni", "Nagercoil", 
-    "Thanjavur", "Dindigul", "Varanasi", "Kanchipuram", "Karur", "Hosur", "Ambur"
+    "Erode", "Vellore", "Thoothukudi", "Tirunelveli", "Theni", "Cumbum", "Bodi", 
+    "Uthamapalayam", "Nagercoil", "Thanjavur", "Dindigul", "Kanchipuram", "Karur", "Hosur", "Ambur"
   ],
   "Telangana": [
     "Hyderabad", "Warangal", "Nizamabad", "Khammam", "Karimnagar", "Ramagundam", 
