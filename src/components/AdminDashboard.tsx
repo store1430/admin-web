@@ -11,7 +11,9 @@ import {
   X,
   Lock,
   Globe,
-  KeyRound
+  KeyRound,
+  Phone,
+  Building
 } from "lucide-react";
 import {
   Branch,
@@ -86,6 +88,10 @@ export function AdminDashboard() {
     return branches.find((branch) => branch._id === selectedBranchId) || null;
   }, [branches, selectedBranchId]);
 
+  const currentBranch = useMemo(() => {
+    return branches.find((b) => b._id === branchIdFromUrl) || null;
+  }, [branches, branchIdFromUrl]);
+
   const visibleNavItems = useMemo(() => {
     return isBranchDashboard ? navItems.filter((item) => item.id !== "branches") : navItems;
   }, [isBranchDashboard]);
@@ -145,60 +151,125 @@ export function AdminDashboard() {
     );
   }
 
-  // Scoped Auth Check: require login if branch dashboard and not yet authenticated
+  // Split-Screen Premium Branch Login
   if (isBranchDashboard && !isBranchAuthenticated) {
-    const currentBranchName = branchMap[branchIdFromUrl] || "Location Portal";
+    const currentBranchName = currentBranch?.name || "Location Portal";
+    const branchImage = currentBranch?.imageUrl || "/vet_banner_branches.jpg";
+    
     return (
-      <div className="flex min-h-screen w-screen items-center justify-center bg-gradient-to-tr from-teal-50 via-white to-clinic-mint/30 p-4">
-        <div className="w-full max-w-md rounded-3xl border border-teal-100 bg-white/95 p-8 shadow-2xl backdrop-blur-md animate-scaleUp">
-          <div className="text-center mb-8">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-clinic-teal text-white shadow-lg shadow-teal-200/50 mb-4">
-              <KeyRound size={28} />
+      <div className="flex h-screen w-screen overflow-hidden bg-white">
+        
+        {/* Left Side: Dynamic Branch Image Cover */}
+        <div 
+          className="hidden md:flex md:w-[55%] relative flex-col justify-between p-12 text-white bg-slate-900 overflow-hidden"
+          style={{
+            backgroundImage: `url(${branchImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        >
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-teal-950 via-teal-900/35 to-slate-900/30" />
+
+          {/* Left top brand info */}
+          <div className="relative z-10 flex items-center gap-3 bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 w-fit">
+            <img
+              src="https://ik.imagekit.io/zua3mzlzy/maruthi-pet-clinic/brand/maruthi-pet-clinic-logo_CqLq9YHOE.webp"
+              alt="Maruthi Pet Clinic Logo"
+              className="h-10 w-10 rounded-full object-cover border border-white/20"
+            />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-200">Maruthi</p>
+              <h1 className="text-sm font-black text-white">Pet Clinic</h1>
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-teal-600">Location Access Portal</p>
-            <h2 className="text-2xl font-black text-clinic-ink mt-1.5">{currentBranchName}</h2>
-            <p className="text-xs text-slate-400 font-semibold mt-1">Please enter branch login credentials to proceed</p>
           </div>
 
-          {loginError && (
-            <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 font-bold text-center">
-              ⚠️ {loginError}
+          {/* Left bottom branch info block */}
+          <div className="relative z-10 space-y-4 max-w-lg bg-black/35 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl">
+            <div className="inline-flex items-center gap-1 bg-clinic-mint/25 text-clinic-mint border border-clinic-mint/20 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider">
+              <MapPin size={12} />
+              <span>Clinic Location</span>
             </div>
-          )}
-
-          <form onSubmit={handleBranchLogin} className="space-y-5">
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Username</span>
-              <input
-                required
-                value={loginUser}
-                onChange={(e) => setLoginUser(e.target.value)}
-                placeholder="theni_admin"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3.5 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Password</span>
-              <input
-                required
-                type="password"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3.5 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={loginSubmitting}
-              className="w-full rounded-xl bg-clinic-teal px-5 py-3.5 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:opacity-60 text-sm"
-            >
-              {loginSubmitting ? "Authenticating..." : "Access Location Portal"}
-            </button>
-          </form>
+            
+            <h2 className="text-3xl font-black tracking-tight text-white">{currentBranchName}</h2>
+            
+            <div className="space-y-2 border-t border-white/10 pt-4 text-xs font-semibold text-teal-50/90">
+              {currentBranch?.address && (
+                <p className="flex items-start gap-2">
+                  <Building size={14} className="shrink-0 text-clinic-mint" />
+                  <span>{currentBranch.address}</span>
+                </p>
+              )}
+              {currentBranch?.phone && (
+                <p className="flex items-center gap-2">
+                  <Phone size={14} className="shrink-0 text-clinic-mint" />
+                  <span>{currentBranch.phone}</span>
+                </p>
+              )}
+              <p className="flex items-center gap-2">
+                <Globe size={14} className="shrink-0 text-clinic-mint" />
+                <span>{currentBranch?.city || "Hyderabad"}, {currentBranch?.state || "Telangana"}</span>
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Right Side: Centered credentials form */}
+        <div className="w-full md:w-[45%] flex flex-col justify-center items-center px-6 sm:px-16 py-10 bg-[#f7fbfa]">
+          <div className="w-full max-w-md space-y-8 bg-white border border-teal-100/50 rounded-3xl p-8 shadow-xl animate-scaleUp">
+            
+            <div className="text-center space-y-3">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-clinic-teal text-white shadow-lg shadow-teal-200/50">
+                <KeyRound size={22} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600">Location Access Portal</p>
+                <h2 className="text-xl font-black text-clinic-ink">Portal Verification</h2>
+                <p className="text-xs text-slate-400 font-semibold">Enter your branch credentials to unlock dashboard</p>
+              </div>
+            </div>
+
+            {loginError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 font-bold text-center">
+                ⚠️ {loginError}
+              </div>
+            )}
+
+            <form onSubmit={handleBranchLogin} className="space-y-5">
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Username</span>
+                <input
+                  required
+                  value={loginUser}
+                  onChange={(e) => setLoginUser(e.target.value)}
+                  placeholder="theni_admin"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Password</span>
+                <input
+                  required
+                  type="password"
+                  value={loginPass}
+                  onChange={(e) => setLoginPass(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={loginSubmitting}
+                className="w-full rounded-xl bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:opacity-60 text-sm"
+              >
+                {loginSubmitting ? "Authenticating..." : "Unlock Dashboard"}
+              </button>
+            </form>
+          </div>
+        </div>
+
       </div>
     );
   }
