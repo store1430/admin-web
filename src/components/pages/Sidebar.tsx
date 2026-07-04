@@ -17,7 +17,7 @@ interface NavigationItem {
   icon: LucideIcon;
 }
 
-const navItems: NavigationItem[] = [
+export const navItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "banners", label: "Banners", icon: ImageIcon },
   { id: "doctors", label: "Doctors", icon: Stethoscope },

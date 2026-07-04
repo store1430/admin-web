@@ -14,7 +14,7 @@ import {
   loginBranch
 } from "../lib/api";
 
-import { Sidebar } from "./pages/Sidebar";
+import { Sidebar, navItems } from "./pages/Sidebar";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BannersPage } from "./pages/BannersPage";
 import { DoctorsPage } from "./pages/DoctorsPage";
