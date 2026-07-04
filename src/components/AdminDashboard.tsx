@@ -209,7 +209,7 @@ export function AdminDashboard() {
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-teal-100 bg-white/95 px-5 py-6 shadow-soft lg:block">
         <div className="mb-10 flex items-center gap-3">
           <img
-            src="/clinic_logo.jpg"
+            src="https://ik.imagekit.io/zua3mzlzy/maruthi-pet-clinic/brand/maruthi-pet-clinic-logo_CqLq9YHOE.webp"
             alt="Maruthi Pet Clinic Logo"
             className="h-12 w-12 rounded-xl object-cover shadow-sm border border-teal-50"
             onError={(e) => {
