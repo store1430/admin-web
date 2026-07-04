@@ -23,13 +23,15 @@ const CITIES = [
   "Kolkata"
 ];
 
-const COUNTRIES = [
-  "India",
-  "Nepal",
-  "Sri Lanka",
-  "Bangladesh",
-  "United Arab Emirates",
-  "Singapore"
+const STATES = [
+  "Telangana",
+  "Karnataka",
+  "Tamil Nadu",
+  "Maharashtra",
+  "Delhi",
+  "West Bengal",
+  "Kerala",
+  "Andhra Pradesh"
 ];
 
 export function BranchesPage({
@@ -46,8 +48,8 @@ export function BranchesPage({
     address: string;
     phone: string;
     image: File | null;
-    country: string;
-  }>({ name: "", city: CITIES[0], address: "", phone: "", image: null, country: COUNTRIES[0] });
+    state: string;
+  }>({ name: "", city: CITIES[0], address: "", phone: "", image: null, state: STATES[0] });
 
   const [branchSubmitting, setBranchSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -70,14 +72,14 @@ export function BranchesPage({
       address: branch.address || "",
       phone: branch.phone || "",
       image: null,
-      country: branch.country || COUNTRIES[0]
+      state: branch.state || STATES[0]
     });
     setShowBranchModal(true);
   }
 
   function cancelEditBranch() {
     setEditingBranchId(null);
-    setBranchForm({ name: "", city: CITIES[0], address: "", phone: "", image: null, country: COUNTRIES[0] });
+    setBranchForm({ name: "", city: CITIES[0], address: "", phone: "", image: null, state: STATES[0] });
     setShowBranchModal(false);
   }
 
@@ -92,7 +94,7 @@ export function BranchesPage({
       formData.append("city", branchForm.city);
       formData.append("address", branchForm.address);
       formData.append("phone", branchForm.phone);
-      formData.append("country", branchForm.country);
+      formData.append("state", branchForm.state);
       if (branchForm.image) {
         formData.append("image", branchForm.image);
       }
@@ -206,16 +208,16 @@ export function BranchesPage({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-600">Country *</span>
+                  <span className="mb-2 block text-sm font-semibold text-slate-600">State *</span>
                   <select
                     required
-                    value={branchForm.country}
-                    onChange={(e) => setBranchForm({ ...branchForm, country: e.target.value })}
+                    value={branchForm.state}
+                    onChange={(e) => setBranchForm({ ...branchForm, state: e.target.value })}
                     className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
                   >
-                    {COUNTRIES.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
+                    {STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
                       </option>
                     ))}
                   </select>
@@ -329,7 +331,7 @@ export function BranchesPage({
                   <td className="px-5 py-4 text-slate-600 font-semibold">
                     <div className="flex items-center gap-1.5">
                       <Globe size={13} className="text-slate-400" />
-                      <span>{b.city}, {b.country || "India"}</span>
+                      <span>{b.city}, {b.state || "Telangana"}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-slate-500">{b.address || "—"}</td>
