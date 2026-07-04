@@ -1,0 +1,338 @@
+import React from "react";
+import { UploadCloud, Edit, Trash2, X, IndianRupee } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ServiceCategory, CategoryStatus } from "../../lib/api";
+
+interface ServiceCategoriesTabProps {
+  categories: ServiceCategory[];
+  form: {
+    name: string;
+    status: CategoryStatus;
+    image: File | null;
+  };
+  setForm: React.Dispatch<React.SetStateAction<any>>;
+  previewUrl: string | null;
+  submitting: boolean;
+  handleCategorySubmit: (e: React.FormEvent) => void;
+  editingCategory: ServiceCategory | null;
+  cancelEditCategory: () => void;
+  startEditCategory: (c: ServiceCategory) => void;
+  handleCategoryDelete: (id: string) => void;
+  selectedCategory: ServiceCategory | null;
+  setSelectedCategory: (c: ServiceCategory | null) => void;
+  subForm: {
+    name: string;
+    price: string;
+    status: CategoryStatus;
+    image: File | null;
+  };
+  setSubForm: React.Dispatch<React.SetStateAction<any>>;
+  subPreviewUrl: string | null;
+  subSubmitting: boolean;
+  handleSubCategorySubmit: (e: React.FormEvent) => void;
+  handleSubCategoryDelete: (id: string) => void;
+}
+
+export function ServiceCategoriesTab({
+  categories,
+  form,
+  setForm,
+  previewUrl,
+  submitting,
+  handleCategorySubmit,
+  editingCategory,
+  cancelEditCategory,
+  startEditCategory,
+  handleCategoryDelete,
+  selectedCategory,
+  setSelectedCategory,
+  subForm,
+  setSubForm,
+  subPreviewUrl,
+  subSubmitting,
+  handleSubCategorySubmit,
+  handleSubCategoryDelete
+}: ServiceCategoriesTabProps) {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[400px_1fr]">
+        {/* Add/Edit Category Form */}
+        <form onSubmit={handleCategorySubmit} className="rounded-2xl border border-teal-100 bg-white p-5 shadow-soft h-fit">
+          <h3 className="mb-5 text-lg font-bold text-clinic-ink">
+            {editingCategory ? "Edit Service Category" : "Add Service Category"}
+          </h3>
+
+          <label className="mb-4 block">
+            <span className="mb-2 block text-sm font-semibold text-slate-600">Category Name</span>
+            <input
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Grooming"
+              className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
+            />
+          </label>
+
+          <label className="mb-4 block">
+            <span className="mb-2 block text-sm font-semibold text-slate-600">Status</span>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as CategoryStatus })}
+              className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </label>
+
+          <label className="mb-5 block cursor-pointer rounded border-2 border-dashed border-teal-200 bg-teal-50/60 p-5 text-center transition hover:border-clinic-teal">
+            {previewUrl ? (
+              <img src={previewUrl} alt="Category preview" className="mx-auto h-36 w-full rounded object-cover" />
+            ) : (
+              <div className="grid place-items-center gap-2 py-6 text-teal-700">
+                <UploadCloud size={32} />
+                <span className="text-sm font-semibold">Choose category image</span>
+              </div>
+            )}
+            <input
+              required={!editingCategory}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
+            />
+          </label>
+
+          <div className="flex gap-3">
+            {editingCategory && (
+              <button
+                type="button"
+                onClick={cancelEditCategory}
+                className="flex-1 rounded border border-slate-200 bg-white px-5 py-3 font-bold text-slate-500 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              disabled={submitting}
+              className="flex-1 rounded bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
+            </button>
+          </div>
+        </form>
+
+        {/* Category Library */}
+        <div className="rounded-2xl border border-teal-100 bg-white shadow-soft overflow-hidden h-fit">
+          <div className="border-b border-teal-100 px-5 py-4">
+            <h3 className="text-lg font-bold text-clinic-ink">Category Library</h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left">
+              <thead className="bg-teal-50 text-xs uppercase tracking-[0.14em] text-teal-700">
+                <tr>
+                  <th className="px-5 py-4">Category</th>
+                  <th className="px-5 py-4">Sub Categories</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-8 text-center text-slate-400 font-semibold">
+                      No categories yet.
+                    </td>
+                  </tr>
+                ) : (
+                  categories.map((category) => (
+                    <tr key={category._id} className="transition hover:bg-slate-50">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <img src={category.imageUrl} alt={category.name} className="h-12 w-14 rounded object-cover border border-slate-100" />
+                          <div>
+                            <p className="font-bold text-clinic-ink">{category.name}</p>
+                            <p className="text-[10px] text-slate-400">
+                              Created {new Date(category.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-xs font-bold text-clinic-teal">
+                        {category.subCategories?.length || 0} sub-items
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`rounded px-3 py-1 text-xs font-bold ${
+                          category.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {category.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => startEditCategory(category)}
+                          className="rounded bg-teal-50 text-clinic-teal hover:bg-clinic-teal hover:text-white p-2 text-xs font-bold transition"
+                          title="Edit Category"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleCategoryDelete(category._id)}
+                          className="rounded bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2 text-xs font-bold transition"
+                          title="Delete Category"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedCategory(category)}
+                          className={`rounded px-3.5 py-2 text-xs font-bold transition shadow-sm ${
+                            selectedCategory?._id === category._id
+                              ? "bg-clinic-teal text-white"
+                              : "bg-clinic-mint text-clinic-teal hover:bg-clinic-teal hover:text-white"
+                          }`}
+                        >
+                          Manage Subs
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Inline Subcategory Drawer */}
+      <AnimatePresence>
+        {selectedCategory && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="rounded-2xl border-2 border-teal-200 bg-teal-50/25 p-6 shadow-soft grid gap-6 xl:grid-cols-[380px_1fr]"
+          >
+            {/* Sub Form */}
+            <form onSubmit={handleSubCategorySubmit} className="rounded-xl border border-teal-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4 border-b border-teal-50 pb-3">
+                <h4 className="text-sm font-bold text-clinic-ink uppercase tracking-wider">
+                  Add Sub-category to {selectedCategory.name}
+                </h4>
+                <button type="button" onClick={() => setSelectedCategory(null)} className="text-slate-400 hover:text-rose-600">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <label className="mb-4 block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Sub-category Name</span>
+                <input
+                  required
+                  value={subForm.name}
+                  onChange={(e) => setSubForm({ ...subForm, name: e.target.value })}
+                  placeholder="Bath & Brush"
+                  className="w-full rounded border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
+                />
+              </label>
+
+              <label className="mb-4 block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Price (Rs.)</span>
+                <div className="relative">
+                  <IndianRupee className="absolute left-3 top-3 text-slate-400" size={16} />
+                  <input
+                    required
+                    min="0"
+                    type="number"
+                    value={subForm.price}
+                    onChange={(e) => setSubForm({ ...subForm, price: e.target.value })}
+                    placeholder="500"
+                    className="w-full rounded border border-slate-200 py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
+                  />
+                </div>
+              </label>
+
+              <label className="mb-5 block cursor-pointer rounded border-2 border-dashed border-teal-200 bg-teal-50/60 p-4 text-center transition hover:border-clinic-teal">
+                {subPreviewUrl ? (
+                  <img src={subPreviewUrl} alt="Subcategory preview" className="mx-auto h-24 w-full rounded object-cover" />
+                ) : (
+                  <div className="grid place-items-center gap-1.5 py-3 text-teal-700">
+                    <UploadCloud size={24} />
+                    <span className="text-xs font-semibold">Choose sub-category image</span>
+                  </div>
+                )}
+                <input
+                  required
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setSubForm({ ...subForm, image: e.target.files?.[0] || null })}
+                />
+              </label>
+
+              <button
+                disabled={subSubmitting}
+                className="w-full rounded bg-clinic-teal px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-100 transition hover:bg-teal-800 disabled:opacity-60"
+              >
+                {subSubmitting ? "Saving..." : "Add Sub-item"}
+              </button>
+            </form>
+
+            {/* Subs List */}
+            <div className="rounded-xl border border-teal-100 bg-white shadow-sm overflow-hidden flex flex-col justify-between">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-teal-50/50 text-xs uppercase tracking-[0.14em] text-teal-700">
+                    <tr>
+                      <th className="px-5 py-3">Image</th>
+                      <th className="px-5 py-3">Sub Category</th>
+                      <th className="px-5 py-3">Price</th>
+                      <th className="px-5 py-3">Status</th>
+                      <th className="px-5 py-3 text-right">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {!selectedCategory.subCategories || selectedCategory.subCategories.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-8 text-center text-slate-400 font-semibold">
+                          No subcategories defined for {selectedCategory.name}.
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedCategory.subCategories.map((sub) => (
+                        <tr key={sub._id} className="transition hover:bg-slate-50/50">
+                          <td className="px-5 py-3">
+                            {sub.imageUrl ? (
+                              <img src={sub.imageUrl} alt={sub.name} className="h-10 w-12 rounded object-cover border border-slate-100" />
+                            ) : (
+                              <div className="h-10 w-12 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-bold">No image</div>
+                            )}
+                          </td>
+                          <td className="px-5 py-3 font-bold text-clinic-ink text-sm">{sub.name}</td>
+                          <td className="px-5 py-3 font-semibold text-slate-700 text-sm">Rs. {sub.price}</td>
+                          <td className="px-5 py-3">
+                            <span className="bg-emerald-50 text-emerald-700 rounded px-2.5 py-0.5 text-[11px] font-bold">
+                              {sub.status}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleSubCategoryDelete(sub._id)}
+                              className="text-slate-400 hover:text-rose-600 p-1.5 rounded transition hover:bg-rose-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
