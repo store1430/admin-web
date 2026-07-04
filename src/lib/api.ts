@@ -27,6 +27,7 @@ export interface CreateCategoryPayload {
   name: string;
   status: CategoryStatus;
   image: File;
+  branchId?: string;
 }
 
 export interface Appointment {
@@ -71,8 +72,11 @@ export interface Doctor {
   createdAt?: string;
 }
 
-export async function fetchCategories(): Promise<ServiceCategory[]> {
-  const response = await fetch(`${API_URL}/service-categories`);
+export async function fetchCategories(branchId?: string): Promise<ServiceCategory[]> {
+  const url = branchId && branchId !== "all" 
+    ? `${API_URL}/service-categories?branchId=${encodeURIComponent(branchId)}`
+    : `${API_URL}/service-categories`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error("Unable to load categories");
   return response.json();
 }
@@ -82,6 +86,9 @@ export async function createCategory(payload: CreateCategoryPayload): Promise<Se
   formData.append("name", payload.name);
   formData.append("status", payload.status);
   formData.append("image", payload.image);
+  if (payload.branchId) {
+    formData.append("branchId", payload.branchId);
+  }
 
   const response = await fetch(`${API_URL}/service-categories`, {
     method: "POST",
@@ -141,12 +148,13 @@ export async function deleteCategory(categoryId: string): Promise<{ success: boo
 
 export async function updateCategory(
   categoryId: string,
-  payload: { name?: string; status?: string; image?: File | null }
+  payload: { name?: string; status?: string; image?: File | null; branchId?: string }
 ): Promise<ServiceCategory> {
   const formData = new FormData();
   if (payload.name) formData.append("name", payload.name);
   if (payload.status) formData.append("status", payload.status);
   if (payload.image) formData.append("image", payload.image);
+  if (payload.branchId) formData.append("branchId", payload.branchId);
 
   const response = await fetch(`${API_URL}/service-categories/${categoryId}`, {
     method: "PUT",
@@ -217,8 +225,11 @@ export interface Banner {
   createdAt?: string;
 }
 
-export async function fetchBanners(): Promise<Banner[]> {
-  const response = await fetch(`${API_URL}/banners/all`);
+export async function fetchBanners(branchId?: string): Promise<Banner[]> {
+  const url = branchId && branchId !== "all"
+    ? `${API_URL}/banners/all?branchId=${encodeURIComponent(branchId)}`
+    : `${API_URL}/banners/all`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error("Unable to load banners");
   return response.json();
 }
@@ -227,11 +238,15 @@ export async function createBanner(payload: {
   title?: string;
   image: File;
   status?: string;
+  branchId?: string;
 }): Promise<Banner> {
   const formData = new FormData();
   if (payload.title) formData.append("title", payload.title);
   formData.append("image", payload.image);
   formData.append("status", payload.status || "Active");
+  if (payload.branchId) {
+    formData.append("branchId", payload.branchId);
+  }
 
   const response = await fetch(`${API_URL}/banners`, {
     method: "POST",

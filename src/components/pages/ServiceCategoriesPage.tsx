@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { UploadCloud, Edit, Trash2, X, IndianRupee } from "lucide-react";
+import { UploadCloud, Edit, Trash2, X, IndianRupee, MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ServiceCategory,
   CategoryStatus,
+  Branch,
   fetchCategories,
   createCategory,
   updateCategory,
@@ -24,7 +25,12 @@ const initialForm: CategoryFormState = {
   image: null
 };
 
-export function ServiceCategoriesPage() {
+interface ServiceCategoriesPageProps {
+  selectedBranchId: string;
+  branches: Branch[];
+}
+
+export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCategoriesPageProps) {
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,21 +50,30 @@ export function ServiceCategoriesPage() {
   }>({ name: "", price: "", status: "Active", image: null });
   const [subSubmitting, setSubSubmitting] = useState(false);
 
-  async function loadCategoriesData() {
-    try {
-      setLoading(true);
-      const data = await fetchCategories();
-      setCategories(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load service categories");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const selectedBranchName = useMemo(() => {
+    if (selectedBranchId === "all") return "All Branches";
+    const found = branches.find((b) => b._id === selectedBranchId);
+    return found ? found.name : "Selected Branch";
+  }, [selectedBranchId, branches]);
 
   useEffect(() => {
+    async function loadCategoriesData() {
+      if (selectedBranchId === "all") {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await fetchCategories(selectedBranchId);
+        setCategories(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load service categories");
+      } finally {
+        setLoading(false);
+      }
+    }
     loadCategoriesData();
-  }, []);
+  }, [selectedBranchId]);
 
   const previewUrl = useMemo(() => {
     if (form.image) return URL.createObjectURL(form.image);
@@ -105,6 +120,10 @@ export function ServiceCategoriesPage() {
 
   async function handleCategorySubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (selectedBranchId === "all") {
+      setError("Please select a specific branch from the top-right header first.");
+      return;
+    }
     setError("");
     setSubmitting(true);
 
@@ -113,7 +132,8 @@ export function ServiceCategoriesPage() {
         const updated = await updateCategory(editingCategory._id, {
           name: form.name,
           status: form.status,
-          image: form.image
+          image: form.image,
+          branchId: selectedBranchId
         });
         setCategories((current) => current.map((c) => (c._id === editingCategory._id ? updated : c)));
         setNotice("Category updated successfully!");
@@ -122,7 +142,12 @@ export function ServiceCategoriesPage() {
         if (!form.image) {
           throw new Error("Please choose a category image");
         }
-        const saved = await createCategory({ name: form.name, status: form.status, image: form.image });
+        const saved = await createCategory({
+          name: form.name,
+          status: form.status,
+          image: form.image,
+          branchId: selectedBranchId
+        });
         setCategories((current) => [saved, ...current]);
         setNotice("New category created successfully!");
         setForm(initialForm);
@@ -177,11 +202,27 @@ export function ServiceCategoriesPage() {
     }
   }
 
+  if (selectedBranchId === "all") {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4 bg-white border border-teal-100 rounded-3xl p-8 shadow-soft">
+        <div className="p-4 bg-teal-50 rounded-full text-clinic-teal">
+          <MapPin size={42} />
+        </div>
+        <div className="text-center max-w-sm space-y-1">
+          <h4 className="font-extrabold text-clinic-ink text-base">Select Branch to Manage Services</h4>
+          <p className="text-xs font-semibold text-slate-400">
+            Each branch has its own separate services listing and rates. Please select a specific branch location from the top-right header selector.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-teal-700">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
-        <span className="font-bold">Loading service categories...</span>
+        <span className="font-bold">Loading categories for {selectedBranchName}...</span>
       </div>
     );
   }
@@ -209,9 +250,12 @@ export function ServiceCategoriesPage() {
       <div className="grid gap-6 xl:grid-cols-[400px_1fr]">
         {/* Add/Edit Category Form */}
         <form onSubmit={handleCategorySubmit} className="rounded-2xl border border-teal-100 bg-white p-5 shadow-soft h-fit">
-          <h3 className="mb-5 text-lg font-bold text-clinic-ink">
+          <h3 className="mb-1 text-lg font-bold text-clinic-ink">
             {editingCategory ? "Edit Service Category" : "Add Service Category"}
           </h3>
+          <p className="mb-5 text-xs text-slate-400 font-semibold">
+            Adding service details scoped to <strong>{selectedBranchName}</strong>
+          </p>
 
           <label className="mb-4 block">
             <span className="mb-2 block text-sm font-semibold text-slate-600">Category Name</span>
@@ -268,7 +312,7 @@ export function ServiceCategoriesPage() {
               disabled={submitting}
               className="flex-1 rounded bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
+              {submitting ? "Saving..." : editingCategory ? "Update Category" : `Save for ${selectedBranchName}`}
             </button>
           </div>
         </form>
@@ -293,7 +337,7 @@ export function ServiceCategoriesPage() {
                 {categories.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-5 py-8 text-center text-slate-400 font-semibold">
-                      No categories yet.
+                      No categories added for this branch yet.
                     </td>
                   </tr>
                 ) : (

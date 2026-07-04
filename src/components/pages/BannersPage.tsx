@@ -1,8 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { UploadCloud, Trash2, ImageIcon, X } from "lucide-react";
-import { Banner, fetchBanners, createBanner, deleteBanner } from "../../lib/api";
+import { UploadCloud, Trash2, ImageIcon, X, MapPin } from "lucide-react";
+import { Banner, Branch, fetchBanners, createBanner, deleteBanner } from "../../lib/api";
 
-export function BannersPage() {
+interface BannersPageProps {
+  selectedBranchId: string;
+  branches: Branch[];
+}
+
+export function BannersPage({ selectedBranchId, branches }: BannersPageProps) {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannerForm, setBannerForm] = useState<{ title: string; image: File | null }>({
     title: "",
@@ -13,11 +18,21 @@ export function BannersPage() {
   const [notice, setNotice] = useState("");
   const [bannerSubmitting, setBannerSubmitting] = useState(false);
 
+  const selectedBranchName = useMemo(() => {
+    if (selectedBranchId === "all") return "All Branches";
+    const found = branches.find((b) => b._id === selectedBranchId);
+    return found ? found.name : "Selected Branch";
+  }, [selectedBranchId, branches]);
+
   useEffect(() => {
     async function loadBanners() {
+      if (selectedBranchId === "all") {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const data = await fetchBanners();
+        const data = await fetchBanners(selectedBranchId);
         setBanners(data);
       } catch (err: any) {
         setError(err.message || "Failed to load banners");
@@ -26,7 +41,7 @@ export function BannersPage() {
       }
     }
     loadBanners();
-  }, []);
+  }, [selectedBranchId]);
 
   const bannerPreviewUrl = useMemo(() => {
     if (bannerForm.image) return URL.createObjectURL(bannerForm.image);
@@ -35,18 +50,26 @@ export function BannersPage() {
 
   async function handleBannerSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (selectedBranchId === "all") {
+      setError("Please select a specific branch from the top-right header first.");
+      return;
+    }
     if (!bannerForm.image) {
       setError("Please choose a banner image");
       return;
     }
     if (banners.length >= 3) {
-      setError("Maximum 3 banners allowed. Delete one first.");
+      setError("Maximum 3 banners allowed for this branch. Delete one first.");
       return;
     }
     setError("");
     setBannerSubmitting(true);
     try {
-      const saved = await createBanner({ title: bannerForm.title, image: bannerForm.image });
+      const saved = await createBanner({
+        title: bannerForm.title,
+        image: bannerForm.image,
+        branchId: selectedBranchId
+      });
       setBanners((current) => [...current, saved]);
       setBannerForm({ title: "", image: null });
       setNotice("Banner uploaded successfully!");
@@ -69,11 +92,27 @@ export function BannersPage() {
     }
   }
 
+  if (selectedBranchId === "all") {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4 bg-white border border-teal-100 rounded-3xl p-8 shadow-soft">
+        <div className="p-4 bg-teal-50 rounded-full text-clinic-teal">
+          <MapPin size={42} />
+        </div>
+        <div className="text-center max-w-sm space-y-1">
+          <h4 className="font-extrabold text-clinic-ink text-base">Select Branch to Manage Banners</h4>
+          <p className="text-xs font-semibold text-slate-400">
+            Each branch has its own separate carousel banners. Please select a specific branch location from the top-right header selector.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-teal-700">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
-        <span className="font-bold">Loading banners...</span>
+        <span className="font-bold">Loading banners for {selectedBranchName}...</span>
       </div>
     );
   }
@@ -102,7 +141,9 @@ export function BannersPage() {
         {/* Banner Upload Form */}
         <form onSubmit={handleBannerSubmit} className="rounded-2xl border border-teal-100 bg-white p-5 shadow-soft h-fit">
           <h3 className="mb-1 text-lg font-bold text-clinic-ink">Upload Banner</h3>
-          <p className="mb-5 text-xs text-slate-400 font-semibold">Max 3 banners. These appear as a carousel on the home screen.</p>
+          <p className="mb-5 text-xs text-slate-400 font-semibold">
+            Max 3 banners for <strong>{selectedBranchName}</strong>. These appear as a carousel on the home screen.
+          </p>
 
           <label className="mb-4 block">
             <span className="mb-2 block text-sm font-semibold text-slate-600">Banner Title (optional)</span>
@@ -137,15 +178,15 @@ export function BannersPage() {
             disabled={bannerSubmitting || banners.length >= 3}
             className="w-full rounded-xl bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {bannerSubmitting ? "Uploading..." : banners.length >= 3 ? "Max 3 Banners Reached" : "Upload Banner"}
+            {bannerSubmitting ? "Uploading..." : banners.length >= 3 ? "Max 3 Banners Reached" : `Upload for ${selectedBranchName}`}
           </button>
         </form>
 
         {/* Banner Slots */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-clinic-ink">Home Screen Banners</h3>
-            <span className="text-sm font-bold text-slate-400">{banners.length}/3 used</span>
+            <h3 className="text-lg font-bold text-clinic-ink">Active Banners</h3>
+            <span className="text-sm font-bold text-slate-400">{banners.length}/3 used in this branch</span>
           </div>
 
           {/* Slot indicators */}
@@ -196,7 +237,7 @@ export function BannersPage() {
 
           {banners.length === 0 && (
             <div className="rounded-xl border border-teal-50 bg-teal-50/30 px-5 py-4 text-sm text-teal-700 font-semibold">
-              💡 Upload up to 3 banners. They'll auto-rotate on the app home screen as a carousel.
+              💡 Upload up to 3 banners for {selectedBranchName}. Banners uploaded here will only rotate inside the home screen carousel of this branch.
             </div>
           )}
         </div>

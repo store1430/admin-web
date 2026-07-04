@@ -223,7 +223,10 @@ export function AdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
               >
-                <BannersPage />
+                <BannersPage
+                  selectedBranchId={selectedBranchId}
+                  branches={branches}
+                />
               </motion.div>
             )}
 
@@ -291,7 +294,10 @@ export function AdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
               >
-                <ServiceCategoriesPage />
+                <ServiceCategoriesPage
+                  selectedBranchId={selectedBranchId}
+                  branches={branches}
+                />
               </motion.div>
             )}
           </AnimatePresence>
