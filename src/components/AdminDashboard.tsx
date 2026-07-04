@@ -208,10 +208,26 @@ export function AdminDashboard() {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-teal-100 bg-white/95 px-5 py-6 shadow-soft lg:block">
         <div className="mb-10 flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded bg-clinic-teal text-lg font-bold text-white">M</div>
+          <img
+            src="/clinic_logo.jpg"
+            alt="Maruthi Pet Clinic Logo"
+            className="h-12 w-12 rounded-xl object-cover shadow-sm border border-teal-50"
+            onError={(e) => {
+              // Fallback if image fails to load
+              e.currentTarget.style.display = "none";
+              const fallback = document.getElementById("brand-fallback");
+              if (fallback) fallback.style.display = "grid";
+            }}
+          />
+          <div
+            id="brand-fallback"
+            className="hidden h-12 w-12 place-items-center rounded bg-clinic-teal text-lg font-bold text-white"
+          >
+            M
+          </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-600">Maruthi</p>
-            <h1 className="text-lg font-bold text-clinic-ink">Pet Clinic</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Maruthi</p>
+            <h1 className="text-lg font-black text-clinic-ink">Pet Clinic</h1>
           </div>
         </div>
 
