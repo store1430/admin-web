@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Trigger Cloudflare Pages redeployment to inject new VITE_API_URL env variable
 
 export type CategoryStatus = "Active" | "Inactive";
 
