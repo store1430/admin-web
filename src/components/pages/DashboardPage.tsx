@@ -65,6 +65,14 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
     return doctors.filter((d) => d.branchId === selectedBranchId);
   }, [doctors, selectedBranchId]);
 
+  const filteredCategories = useMemo(() => {
+    if (selectedBranchId === "all") return categories;
+    const branchCats = categories.filter((c) => c.branchId === selectedBranchId);
+    if (branchCats.length > 0) return branchCats;
+    // Fallback to global categories if branch has none
+    return categories.filter((c) => !c.branchId);
+  }, [categories, selectedBranchId]);
+
   const stats = useMemo(() => {
     const totalBookings = filteredAppointments.length;
     const today = new Date().toDateString();
@@ -84,27 +92,34 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
       totalBookings,
       todayBookings,
       totalRevenue,
-      categoriesCount: categories.length,
+      categoriesCount: filteredCategories.length,
       doctorsCount: filteredDoctors.length
     };
-  }, [filteredAppointments, categories, filteredDoctors]);
+  }, [filteredAppointments, filteredCategories, filteredDoctors]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 text-teal-700">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-clinic-teal mb-4"></div>
-        <span className="font-bold text-sm tracking-wider text-slate-500 uppercase">Generating Portal Metrics...</span>
-      </div>
-    );
-  }
+  // Compute actual dynamic distribution percentages for services
+  const distribution = useMemo(() => {
+    if (filteredAppointments.length === 0) {
+      return { general: 0, grooming: 0, surgery: 0, vaccine: 0, targetPct: 0 };
+    }
+    let gen = 0, groom = 0, surg = 0, vac = 0;
+    filteredAppointments.forEach((appt) => {
+      const type = appt.serviceType.toLowerCase();
+      if (type.includes("surgery") || type.includes("operation")) surg++;
+      else if (type.includes("grooming") || type.includes("bath")) groom++;
+      else if (type.includes("vaccine") || type.includes("vaccination")) vac++;
+      else gen++;
+    });
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700 font-semibold shadow-sm">
-        ⚠️ {error}
-      </div>
-    );
-  }
+    const total = filteredAppointments.length;
+    return {
+      general: Math.round((gen / total) * 100),
+      grooming: Math.round((groom / total) * 100),
+      surgery: Math.round((surg / total) * 100),
+      vaccine: Math.round((vac / total) * 100),
+      targetPct: Math.round(((total > 5 ? 5 : total) / 5) * 100)
+    };
+  }, [filteredAppointments]);
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -191,7 +206,7 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
               <Layers size={24} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categories / Doctors</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categories / Vets</p>
               <h4 className="text-3xl font-black text-clinic-ink mt-0.5">
                 {stats.categoriesCount} <span className="text-slate-300 font-light">/</span> {stats.doctorsCount}
               </h4>
@@ -209,10 +224,12 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
               <h3 className="text-lg font-black text-clinic-ink">Booking Activity Chart</h3>
               <p className="text-xs text-slate-400 font-semibold">Weekly load and performance analysis</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
-              <TrendingUp size={14} />
-              <span>+18.4% growth</span>
-            </div>
+            {stats.totalBookings > 0 && (
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full animate-bounce">
+                <TrendingUp size={14} />
+                <span>Active load</span>
+              </div>
+            )}
           </div>
 
           {/* SVG Curvy Chart */}
@@ -235,25 +252,44 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
               <line x1="0" y1="140" x2="500" y2="140" stroke="#f1f5f9" strokeWidth="1" />
               <line x1="0" y1="180" x2="500" y2="180" stroke="#e2e8f0" strokeWidth="1" />
 
-              {/* Area path */}
-              <path
-                d="M 0 160 C 50 140, 70 80, 120 90 C 170 100, 200 40, 250 50 C 300 60, 330 130, 380 120 C 430 110, 450 60, 500 40 L 500 180 L 0 180 Z"
-                fill="url(#chart-grad)"
-              />
+              {stats.totalBookings > 0 ? (
+                <>
+                  {/* Area path */}
+                  <path
+                    d="M 0 160 C 50 140, 70 80, 120 90 C 170 100, 200 40, 250 50 C 300 60, 330 130, 380 120 C 430 110, 450 60, 500 40 L 500 180 L 0 180 Z"
+                    fill="url(#chart-grad)"
+                  />
 
-              {/* Line path */}
-              <path
-                d="M 0 160 C 50 140, 70 80, 120 90 C 170 100, 200 40, 250 50 C 300 60, 330 130, 380 120 C 430 110, 450 60, 500 40"
-                fill="none"
-                stroke="url(#line-grad)"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
+                  {/* Line path */}
+                  <path
+                    d="M 0 160 C 50 140, 70 80, 120 90 C 170 100, 200 40, 250 50 C 300 60, 330 130, 380 120 C 430 110, 450 60, 500 40"
+                    fill="none"
+                    stroke="url(#line-grad)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
 
-              {/* Hover Circles */}
-              <circle cx="120" cy="90" r="5" fill="#0d9488" stroke="#ffffff" strokeWidth="2" />
-              <circle cx="250" cy="50" r="5" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
-              <circle cx="380" cy="120" r="5" fill="#0f766e" stroke="#ffffff" strokeWidth="2" />
+                  {/* Hover Circles */}
+                  <circle cx="120" cy="90" r="5" fill="#0d9488" stroke="#ffffff" strokeWidth="2" />
+                  <circle cx="250" cy="50" r="5" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                  <circle cx="380" cy="120" r="5" fill="#0f766e" stroke="#ffffff" strokeWidth="2" />
+                </>
+              ) : (
+                <>
+                  {/* Flat / Empty Path representing no data */}
+                  <path
+                    d="M 0 180 Q 250 180, 500 180 L 500 180 L 0 180 Z"
+                    fill="url(#chart-grad)"
+                  />
+                  <path
+                    d="M 0 180 Q 250 180, 500 180"
+                    fill="none"
+                    stroke="#cbd5e1"
+                    strokeWidth="3"
+                    strokeDasharray="6 6"
+                  />
+                </>
+              )}
             </svg>
             <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2">
               <span>Mon</span>
@@ -278,13 +314,17 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
             {/* SVG Donut Chart */}
             <svg width="140" height="140" viewBox="0 0 36 36" className="transform -rotate-90">
               <circle cx="18" cy="18" r="15.91" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-              <circle cx="18" cy="18" r="15.91" fill="none" stroke="#0d9488" strokeWidth="4.2" strokeDasharray="45 100" strokeDashoffset="0" />
-              <circle cx="18" cy="18" r="15.91" fill="none" stroke="#10b981" strokeWidth="4.2" strokeDasharray="25 100" strokeDashoffset="-45" />
-              <circle cx="18" cy="18" r="15.91" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray="15 100" strokeDashoffset="-70" />
-              <circle cx="18" cy="18" r="15.91" fill="none" stroke="#f97316" strokeWidth="4.2" strokeDasharray="15 100" strokeDashoffset="-85" />
+              {stats.totalBookings > 0 ? (
+                <>
+                  <circle cx="18" cy="18" r="15.91" fill="none" stroke="#0d9488" strokeWidth="4.2" strokeDasharray={`${distribution.general} 100`} strokeDashoffset="0" />
+                  <circle cx="18" cy="18" r="15.91" fill="none" stroke="#10b981" strokeWidth="4.2" strokeDasharray={`${distribution.grooming} 100`} strokeDashoffset={`-${distribution.general}`} />
+                  <circle cx="18" cy="18" r="15.91" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray={`${distribution.surgery} 100`} strokeDashoffset={`-${distribution.general + distribution.grooming}`} />
+                  <circle cx="18" cy="18" r="15.91" fill="none" stroke="#f97316" strokeWidth="4.2" strokeDasharray={`${distribution.vaccine} 100`} strokeDashoffset={`-${distribution.general + distribution.grooming + distribution.surgery}`} />
+                </>
+              ) : null}
             </svg>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-              <p className="text-2xl font-black text-clinic-ink">85%</p>
+              <p className="text-2xl font-black text-clinic-ink">{distribution.targetPct}%</p>
               <p className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400">Target</p>
             </div>
           </div>
@@ -292,19 +332,19 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
           <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-clinic-teal"></span>
-              <span>General (45%)</span>
+              <span>General ({distribution.general}%)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-              <span>Grooming (25%)</span>
+              <span>Grooming ({distribution.grooming}%)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-blue-500"></span>
-              <span>Surgery (15%)</span>
+              <span>Surgery ({distribution.surgery}%)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
-              <span>Vaccine (15%)</span>
+              <span>Vaccine ({distribution.vaccine}%)</span>
             </div>
           </div>
         </div>
@@ -316,7 +356,7 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
         <div className="xl:col-span-2 rounded-3xl border border-teal-100/80 bg-white shadow-soft overflow-hidden">
           <div className="border-b border-teal-50 px-6 py-5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-teal-50 rounded-lg text-clinic-teal animate-pulse">
+              <div className="p-2 bg-teal-50 rounded-lg text-clinic-teal">
                 <Activity size={18} />
               </div>
               <div>
@@ -344,7 +384,7 @@ export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProp
                 {filteredAppointments.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-16 text-center text-slate-400 font-bold italic text-sm">
-                      No appointments booked yet for this branch.
+                      No active appointments booked for this branch.
                     </td>
                   </tr>
                 ) : (
