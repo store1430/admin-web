@@ -7,14 +7,13 @@ import {
   MapPin,
   ImageIcon,
   Scissors,
-  Lock,
-  LucideIcon
+  Lock
 } from "lucide-react";
 
 interface NavigationItem {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: any;
 }
 
 export const navItems: NavigationItem[] = [
