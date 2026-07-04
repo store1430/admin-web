@@ -42,7 +42,7 @@ const STATE_CITY_DB: Record<string, string[]> = {
   ],
   "Kerala": [
     "Kochi", "Thiruvananthapuram", "Kozhikode", "Kollam", "Thrissur", "Alappuzha", 
-    "Palakkad", "Kannur", "Kottayam", "Kasaragod", "Malappuram", "Thalassery"
+    "Palakkad", "Kannur", "Kottayam", "Kattappana", "Idukki", "Kasaragod", "Malappuram", "Thalassery"
   ],
   "Madhya Pradesh": [
     "Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Dewas", 
@@ -118,6 +118,7 @@ export function BranchesPage({
     image: null
   });
 
+  const [customCity, setCustomCity] = useState("");
   const [branchSubmitting, setBranchSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -139,18 +140,18 @@ export function BranchesPage({
   function startEditBranch(branch: Branch) {
     setEditingBranchId(branch._id);
     const branchState = branch.state || "Telangana";
-    // Check if branch city is in DB list, otherwise add/fallback
     const stateCities = STATE_CITY_DB[branchState] || [];
-    const branchCity = stateCities.includes(branch.city) ? branch.city : (branch.city || stateCities[0]);
+    const isPredefined = stateCities.includes(branch.city);
     
     setBranchForm({
       name: branch.name,
       state: branchState,
-      city: branchCity,
+      city: isPredefined ? branch.city : "Other",
       address: branch.address || "",
       phone: branch.phone || "",
       image: null
     });
+    setCustomCity(isPredefined ? "" : branch.city);
     setShowBranchModal(true);
   }
 
@@ -164,18 +165,23 @@ export function BranchesPage({
       phone: "",
       image: null
     });
+    setCustomCity("");
     setShowBranchModal(false);
   }
 
   async function handleBranchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!branchForm.name || !branchForm.city) return;
+    const finalCity = branchForm.city === "Other" ? customCity.trim() : branchForm.city;
+    if (!branchForm.name || !finalCity) {
+      setError("Please enter branch name and city.");
+      return;
+    }
     setError("");
     setBranchSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("name", branchForm.name);
-      formData.append("city", branchForm.city);
+      formData.append("city", finalCity);
       formData.append("address", branchForm.address);
       formData.append("phone", branchForm.phone);
       formData.append("state", branchForm.state);
@@ -223,6 +229,7 @@ export function BranchesPage({
       state: selectedState,
       city: defaultCity
     }));
+    setCustomCity("");
   };
 
   return (
@@ -319,7 +326,7 @@ export function BranchesPage({
 
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-600">City *</span>
+                  <span className="mb-2 block text-sm font-semibold text-slate-600">City / Town *</span>
                   <select
                     required
                     value={branchForm.city}
@@ -331,6 +338,7 @@ export function BranchesPage({
                         {city}
                       </option>
                     ))}
+                    <option value="Other">Other (Type custom city/town)</option>
                   </select>
                 </label>
 
@@ -344,6 +352,20 @@ export function BranchesPage({
                   />
                 </label>
               </div>
+
+              {/* Show text input only if 'Other' is selected */}
+              {branchForm.city === "Other" && (
+                <label className="block animate-scaleUp">
+                  <span className="mb-2 block text-sm font-semibold text-slate-600">Custom City/Town Name *</span>
+                  <input
+                    required
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                    placeholder="Enter city or town (e.g. Kattappana)"
+                    className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                  />
+                </label>
+              )}
 
               <label className="block">
                 <span className="mb-2 block text-sm font-semibold text-slate-600">Address</span>
