@@ -282,6 +282,8 @@ export interface Branch {
   imageUrl?: string;
   imageFileId?: string;
   state?: string;
+  username?: string;
+  password?: string;
   isActive: boolean;
   createdAt?: string;
 }
@@ -326,6 +328,19 @@ export async function deleteBranch(id: string): Promise<{ success: boolean; mess
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || "Unable to delete branch");
+  }
+  return response.json();
+}
+
+export async function loginBranch(username: string, password: string): Promise<{ success: boolean; branch: Branch }> {
+  const response = await fetch(`${API_URL}/branches/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || "Invalid credentials");
   }
   return response.json();
 }

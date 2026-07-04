@@ -8,11 +8,15 @@ import {
   MapPin,
   ImageIcon,
   Scissors,
-  X
+  X,
+  Lock,
+  Globe,
+  KeyRound
 } from "lucide-react";
 import {
   Branch,
-  fetchBranches
+  fetchBranches,
+  loginBranch
 } from "../lib/api";
 
 import { DashboardPage } from "./pages/DashboardPage";
@@ -47,6 +51,13 @@ export function AdminDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  // Branch login states
+  const [isBranchAuthenticated, setIsBranchAuthenticated] = useState(false);
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+
   async function loadBranchesData() {
     try {
       setLoading(true);
@@ -66,6 +77,8 @@ export function AdminDashboard() {
   useEffect(() => {
     if (isBranchDashboard) {
       setSelectedBranchId(branchIdFromUrl);
+      const auth = localStorage.getItem(`authenticated_branch_${branchIdFromUrl}`) === "true";
+      setIsBranchAuthenticated(auth);
     }
   }, [branchIdFromUrl, isBranchDashboard]);
 
@@ -95,11 +108,97 @@ export function AdminDashboard() {
     setNotice(`Copied branch dashboard URL: ${url}`);
   }
 
+  async function handleBranchLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!loginUser || !loginPass) return;
+    setLoginError("");
+    setLoginSubmitting(true);
+    try {
+      const res = await loginBranch(loginUser, loginPass);
+      if (res.success && res.branch._id === branchIdFromUrl) {
+        localStorage.setItem(`authenticated_branch_${branchIdFromUrl}`, "true");
+        setIsBranchAuthenticated(true);
+      } else {
+        throw new Error("Logged in branch does not match URL");
+      }
+    } catch (err: any) {
+      setLoginError(err.message || "Invalid username or password");
+    } finally {
+      setLoginSubmitting(false);
+    }
+  }
+
+  function handleBranchLogout() {
+    localStorage.removeItem(`authenticated_branch_${branchIdFromUrl}`);
+    setIsBranchAuthenticated(false);
+    setLoginUser("");
+    setLoginPass("");
+    setLoginError("");
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[#f7fbfa] text-teal-700">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
         <span className="font-bold">Syncing location portal...</span>
+      </div>
+    );
+  }
+
+  // Scoped Auth Check: require login if branch dashboard and not yet authenticated
+  if (isBranchDashboard && !isBranchAuthenticated) {
+    const currentBranchName = branchMap[branchIdFromUrl] || "Location Portal";
+    return (
+      <div className="flex min-h-screen w-screen items-center justify-center bg-gradient-to-tr from-teal-50 via-white to-clinic-mint/30 p-4">
+        <div className="w-full max-w-md rounded-3xl border border-teal-100 bg-white/95 p-8 shadow-2xl backdrop-blur-md animate-scaleUp">
+          <div className="text-center mb-8">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-clinic-teal text-white shadow-lg shadow-teal-200/50 mb-4">
+              <KeyRound size={28} />
+            </div>
+            <p className="text-xs font-bold uppercase tracking-widest text-teal-600">Location Access Portal</p>
+            <h2 className="text-2xl font-black text-clinic-ink mt-1.5">{currentBranchName}</h2>
+            <p className="text-xs text-slate-400 font-semibold mt-1">Please enter branch login credentials to proceed</p>
+          </div>
+
+          {loginError && (
+            <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 font-bold text-center">
+              ⚠️ {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleBranchLogin} className="space-y-5">
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Username</span>
+              <input
+                required
+                value={loginUser}
+                onChange={(e) => setLoginUser(e.target.value)}
+                placeholder="theni_admin"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3.5 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Password</span>
+              <input
+                required
+                type="password"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3.5 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-50 text-sm"
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={loginSubmitting}
+              className="w-full rounded-xl bg-clinic-teal px-5 py-3.5 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:opacity-60 text-sm"
+            >
+              {loginSubmitting ? "Authenticating..." : "Access Location Portal"}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -140,6 +239,18 @@ export function AdminDashboard() {
             );
           })}
         </nav>
+
+        {isBranchDashboard && (
+          <div className="absolute bottom-6 left-5 right-5">
+            <button
+              onClick={handleBranchLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50/45 hover:bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 transition"
+            >
+              <Lock size={13} />
+              Lock Dashboard
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Main Area */}

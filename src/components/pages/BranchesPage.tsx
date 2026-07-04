@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Copy, ExternalLink, Edit, Trash2, X, Plus, MapPin, UploadCloud, Globe } from "lucide-react";
+import { Copy, ExternalLink, Edit, Trash2, X, Plus, MapPin, UploadCloud, Globe, Lock } from "lucide-react";
 import { Branch, createBranch, updateBranch, deleteBranch } from "../../lib/api";
 
 interface BranchesPageProps {
@@ -109,13 +109,17 @@ export function BranchesPage({
     phone: string;
     image: File | null;
     state: string;
+    username: string;
+    password: string;
   }>({
     name: "",
     state: "Telangana",
     city: STATE_CITY_DB["Telangana"][0],
     address: "",
     phone: "",
-    image: null
+    image: null,
+    username: "",
+    password: ""
   });
 
   const [customCity, setCustomCity] = useState("");
@@ -149,7 +153,9 @@ export function BranchesPage({
       city: isPredefined ? branch.city : "Other",
       address: branch.address || "",
       phone: branch.phone || "",
-      image: null
+      image: null,
+      username: branch.username || "",
+      password: branch.password || ""
     });
     setCustomCity(isPredefined ? "" : branch.city);
     setShowBranchModal(true);
@@ -163,7 +169,9 @@ export function BranchesPage({
       city: STATE_CITY_DB["Telangana"][0],
       address: "",
       phone: "",
-      image: null
+      image: null,
+      username: "",
+      password: ""
     });
     setCustomCity("");
     setShowBranchModal(false);
@@ -185,6 +193,14 @@ export function BranchesPage({
       formData.append("address", branchForm.address);
       formData.append("phone", branchForm.phone);
       formData.append("state", branchForm.state);
+      
+      if (branchForm.username) {
+        formData.append("username", branchForm.username.trim());
+      }
+      if (branchForm.password) {
+        formData.append("password", branchForm.password);
+      }
+      
       if (branchForm.image) {
         formData.append("image", branchForm.image);
       }
@@ -377,6 +393,36 @@ export function BranchesPage({
                 />
               </label>
 
+              {/* Branch Login Credentials Setup */}
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <h4 className="text-sm font-bold text-clinic-ink flex items-center gap-1.5">
+                  <Lock className="text-clinic-teal" size={16} />
+                  Location Portal Login Credentials
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-slate-600">Portal Username</span>
+                    <input
+                      value={branchForm.username}
+                      onChange={(e) => setBranchForm({ ...branchForm, username: e.target.value })}
+                      placeholder="theni_admin"
+                      className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-slate-600">Portal Password</span>
+                    <input
+                      type="password"
+                      value={branchForm.password}
+                      onChange={(e) => setBranchForm({ ...branchForm, password: e.target.value })}
+                      placeholder="••••••••"
+                      className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="flex gap-3 border-t border-slate-100 pt-4">
                 <button
                   type="button"
@@ -422,6 +468,7 @@ export function BranchesPage({
               <tr>
                 <th className="px-5 py-4">Branch</th>
                 <th className="px-5 py-4">Location</th>
+                <th className="px-5 py-4">Portal Username</th>
                 <th className="px-5 py-4">Address</th>
                 <th className="px-5 py-4">Phone</th>
                 <th className="px-5 py-4">Dashboard URL</th>
@@ -449,11 +496,20 @@ export function BranchesPage({
                       <span>{b.city}, {b.state || "Telangana"}</span>
                     </div>
                   </td>
+                  <td className="px-5 py-4">
+                    {b.username ? (
+                      <code className="rounded bg-teal-50 px-2.5 py-1 text-xs font-bold text-clinic-teal border border-teal-100/60">
+                        {b.username}
+                      </code>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-semibold italic">Not Setup</span>
+                    )}
+                  </td>
                   <td className="px-5 py-4 text-slate-500">{b.address || "—"}</td>
                   <td className="px-5 py-4 text-slate-500">{b.phone || "—"}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <code className="max-w-[180px] truncate rounded bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
+                      <code className="max-w-[150px] truncate rounded bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
                         {getBranchDashboardUrl(b._id)}
                       </code>
                       <button
@@ -497,7 +553,7 @@ export function BranchesPage({
               ))}
               {branches.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 font-semibold">
+                  <td colSpan={7} className="px-5 py-10 text-center text-slate-400 font-semibold">
                     No active clinic locations setup yet.
                   </td>
                 </tr>
