@@ -1,12 +1,12 @@
 import React from "react";
 import { 
-  LayoutDashboard,
-  Stethoscope,
-  Users,
-  Tags,
-  MapPin,
-  ImageIcon,
+  Activity,
+  Megaphone,
+  BriefcaseMedical,
   Scissors,
+  HeartHandshake,
+  PawPrint,
+  Building,
   Lock,
   LucideIcon
 } from "lucide-react";
@@ -19,13 +19,13 @@ interface NavigationItem {
 }
 
 export const navItems: NavigationItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, colorClass: "text-teal-500" },
-  { id: "banners", label: "Banners", icon: ImageIcon, colorClass: "text-indigo-500" },
-  { id: "doctors", label: "Doctors", icon: Stethoscope, colorClass: "text-rose-500" },
+  { id: "dashboard", label: "Dashboard", icon: Activity, colorClass: "text-teal-600" },
+  { id: "banners", label: "Banners", icon: Megaphone, colorClass: "text-indigo-500" },
+  { id: "doctors", label: "Doctors", icon: BriefcaseMedical, colorClass: "text-rose-500" },
   { id: "staff", label: "Grooming Staff", icon: Scissors, colorClass: "text-amber-500" },
-  { id: "users", label: "Users", icon: Users, colorClass: "text-sky-500" },
-  { id: "categories", label: "Service Categories", icon: Tags, colorClass: "text-emerald-500" },
-  { id: "branches", label: "Branches", icon: MapPin, colorClass: "text-purple-500" }
+  { id: "users", label: "Users", icon: HeartHandshake, colorClass: "text-sky-500" },
+  { id: "categories", label: "Service Categories", icon: PawPrint, colorClass: "text-emerald-500" },
+  { id: "branches", label: "Branches", icon: Building, colorClass: "text-purple-500" }
 ];
 
 interface SidebarProps {
