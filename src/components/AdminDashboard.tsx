@@ -23,15 +23,7 @@ import { UsersPage } from "./pages/UsersPage";
 import { ServiceCategoriesPage } from "./pages/ServiceCategoriesPage";
 import { BranchesPage } from "./pages/BranchesPage";
 
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "banners", label: "Banners", icon: ImageIcon },
-  { id: "doctors", label: "Doctors", icon: Stethoscope },
-  { id: "staff", label: "Grooming Staff", icon: Scissors },
-  { id: "users", label: "Users", icon: Users },
-  { id: "categories", label: "Service Categories", icon: Tags },
-  { id: "branches", label: "Branches", icon: MapPin }
-];
+
 
 export function AdminDashboard() {
   const branchIdFromUrl = useMemo(() => {
