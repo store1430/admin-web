@@ -266,6 +266,7 @@ export interface Branch {
   phone?: string;
   imageUrl?: string;
   imageFileId?: string;
+  country?: string;
   isActive: boolean;
   createdAt?: string;
 }

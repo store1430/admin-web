@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Copy, ExternalLink, Edit, Trash2, X, Plus, MapPin, UploadCloud } from "lucide-react";
+import { Copy, ExternalLink, Edit, Trash2, X, Plus, MapPin, UploadCloud, Globe } from "lucide-react";
 import { Branch, createBranch, updateBranch, deleteBranch } from "../../lib/api";
 
 interface BranchesPageProps {
@@ -8,6 +8,29 @@ interface BranchesPageProps {
   getBranchDashboardUrl: (id: string) => string;
   copyBranchDashboardUrl: (id: string) => void;
 }
+
+const CITIES = [
+  "Hyderabad",
+  "Bangalore",
+  "Chennai",
+  "Theni",
+  "Coimbatore",
+  "Madurai",
+  "Kochi",
+  "Mumbai",
+  "Delhi",
+  "Pune",
+  "Kolkata"
+];
+
+const COUNTRIES = [
+  "India",
+  "Nepal",
+  "Sri Lanka",
+  "Bangladesh",
+  "United Arab Emirates",
+  "Singapore"
+];
 
 export function BranchesPage({
   branches,
@@ -23,7 +46,8 @@ export function BranchesPage({
     address: string;
     phone: string;
     image: File | null;
-  }>({ name: "", city: "", address: "", phone: "", image: null });
+    country: string;
+  }>({ name: "", city: CITIES[0], address: "", phone: "", image: null, country: COUNTRIES[0] });
 
   const [branchSubmitting, setBranchSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -42,17 +66,18 @@ export function BranchesPage({
     setEditingBranchId(branch._id);
     setBranchForm({
       name: branch.name,
-      city: branch.city,
+      city: branch.city || CITIES[0],
       address: branch.address || "",
       phone: branch.phone || "",
-      image: null
+      image: null,
+      country: branch.country || COUNTRIES[0]
     });
     setShowBranchModal(true);
   }
 
   function cancelEditBranch() {
     setEditingBranchId(null);
-    setBranchForm({ name: "", city: "", address: "", phone: "", image: null });
+    setBranchForm({ name: "", city: CITIES[0], address: "", phone: "", image: null, country: COUNTRIES[0] });
     setShowBranchModal(false);
   }
 
@@ -67,6 +92,7 @@ export function BranchesPage({
       formData.append("city", branchForm.city);
       formData.append("address", branchForm.address);
       formData.append("phone", branchForm.phone);
+      formData.append("country", branchForm.country);
       if (branchForm.image) {
         formData.append("image", branchForm.image);
       }
@@ -174,32 +200,43 @@ export function BranchesPage({
                     required
                     value={branchForm.name}
                     onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
-                    placeholder="Maruthi Pet Clinic - Hyderabad"
+                    placeholder="Theni Maruthi Pet Clinic"
                     className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-600">City *</span>
-                  <input
+                  <span className="mb-2 block text-sm font-semibold text-slate-600">Country *</span>
+                  <select
                     required
-                    value={branchForm.city}
-                    onChange={(e) => setBranchForm({ ...branchForm, city: e.target.value })}
-                    placeholder="Hyderabad"
-                    className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
-                  />
+                    value={branchForm.country}
+                    onChange={(e) => setBranchForm({ ...branchForm, country: e.target.value })}
+                    className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
+                  >
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-600">Address</span>
-                  <input
-                    value={branchForm.address}
-                    onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
-                    placeholder="Banjara Hills, Road No. 12"
-                    className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
-                  />
+                  <span className="mb-2 block text-sm font-semibold text-slate-600">City *</span>
+                  <select
+                    required
+                    value={branchForm.city}
+                    onChange={(e) => setBranchForm({ ...branchForm, city: e.target.value })}
+                    className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
+                  >
+                    {CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block">
@@ -212,6 +249,16 @@ export function BranchesPage({
                   />
                 </label>
               </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Address</span>
+                <input
+                  value={branchForm.address}
+                  onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
+                  placeholder="Banjara Hills, Road No. 12"
+                  className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                />
+              </label>
 
               <div className="flex gap-3 border-t border-slate-100 pt-4">
                 <button
@@ -257,7 +304,7 @@ export function BranchesPage({
             <thead className="bg-teal-50 text-xs uppercase tracking-[0.14em] text-teal-700">
               <tr>
                 <th className="px-5 py-4">Branch</th>
-                <th className="px-5 py-4">City</th>
+                <th className="px-5 py-4">Location</th>
                 <th className="px-5 py-4">Address</th>
                 <th className="px-5 py-4">Phone</th>
                 <th className="px-5 py-4">Dashboard URL</th>
@@ -279,12 +326,17 @@ export function BranchesPage({
                       <span className="font-bold text-clinic-ink">{b.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-slate-600 font-semibold">{b.city}</td>
+                  <td className="px-5 py-4 text-slate-600 font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <Globe size={13} className="text-slate-400" />
+                      <span>{b.city}, {b.country || "India"}</span>
+                    </div>
+                  </td>
                   <td className="px-5 py-4 text-slate-500">{b.address || "—"}</td>
                   <td className="px-5 py-4 text-slate-500">{b.phone || "—"}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <code className="max-w-[200px] truncate rounded bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
+                      <code className="max-w-[180px] truncate rounded bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
                         {getBranchDashboardUrl(b._id)}
                       </code>
                       <button
