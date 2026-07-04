@@ -207,11 +207,11 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-[#f7fbfa] flex">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-teal-100 bg-white/95 px-5 py-6 shadow-soft lg:block">
-        <div className="mb-10 flex items-center gap-3">
+        <div className="mb-10 flex items-center gap-4">
           <img
             src="https://ik.imagekit.io/zua3mzlzy/maruthi-pet-clinic/brand/maruthi-pet-clinic-logo_CqLq9YHOE.webp"
             alt="Maruthi Pet Clinic Logo"
-            className="h-12 w-12 rounded-xl object-cover shadow-sm border border-teal-50"
+            className="h-16 w-16 rounded-full object-cover shadow-md border border-teal-50"
             onError={(e) => {
               // Fallback if image fails to load
               e.currentTarget.style.display = "none";
@@ -221,7 +221,7 @@ export function AdminDashboard() {
           />
           <div
             id="brand-fallback"
-            className="hidden h-12 w-12 place-items-center rounded bg-clinic-teal text-lg font-bold text-white"
+            className="hidden h-16 w-16 place-items-center rounded-full bg-clinic-teal text-lg font-bold text-white"
           >
             M
           </div>
