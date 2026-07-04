@@ -264,6 +264,8 @@ export interface Branch {
   city: string;
   address?: string;
   phone?: string;
+  imageUrl?: string;
+  imageFileId?: string;
   isActive: boolean;
   createdAt?: string;
 }
@@ -274,16 +276,10 @@ export async function fetchBranches(): Promise<Branch[]> {
   return response.json();
 }
 
-export async function createBranch(payload: {
-  name: string;
-  city: string;
-  address?: string;
-  phone?: string;
-}): Promise<Branch> {
+export async function createBranch(formData: FormData): Promise<Branch> {
   const response = await fetch(`${API_URL}/branches`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: formData
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -294,12 +290,11 @@ export async function createBranch(payload: {
 
 export async function updateBranch(
   id: string,
-  payload: Partial<Omit<Branch, "_id">>
+  formData: FormData
 ): Promise<Branch> {
   const response = await fetch(`${API_URL}/branches/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: formData
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
