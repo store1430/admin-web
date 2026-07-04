@@ -274,34 +274,26 @@ export function AdminDashboard() {
       {/* Main Area */}
       <main className="flex-1 lg:pl-72 min-h-screen flex flex-col">
         <section className="mx-auto w-full max-w-none px-5 py-6 sm:px-8 flex-1">
-          {/* Header */}
-          <div className="mb-8 flex flex-col gap-4 border-b border-teal-100 pb-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-clinic-ink">
-                {visibleNavItems.find((n) => n.id === activeTab)?.label || "Dashboard"}
-              </h2>
+          {/* Top Bar / Header (Only shows if Super Admin needs the Branch Selector) */}
+          {!isBranchDashboard && (
+            <div className="mb-6 flex items-center justify-end">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Branch:</span>
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition focus:border-clinic-teal"
+                >
+                  <option value="all">All Branches</option>
+                  {branches.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name} ({b.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Branch Selector (Only for Super Admin, hidden on Branch Manager dashboard) */}
-              {!isBranchDashboard && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Branch:</span>
-                  <select
-                    value={selectedBranchId}
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition focus:border-clinic-teal"
-                  >
-                    <option value="all">All Branches</option>
-                    {branches.map((b) => (
-                      <option key={b._id} value={b._id}>
-                        {b.name} ({b.city})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
 
           {error && (
             <div className="mb-5 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex justify-between items-center">
