@@ -6,7 +6,8 @@ import {
   Globe,
   KeyRound,
   Phone,
-  Building
+  Building,
+  MapPin
 } from "lucide-react";
 import {
   Branch,
