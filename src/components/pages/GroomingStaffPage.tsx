@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { X, User, UploadCloud, Plus, Scissors, Trash2, Edit, Phone } from "lucide-react";
-import { StaffMember, Branch, createStaff, updateStaff, deleteStaff } from "../../lib/api";
+import { StaffMember, Branch, fetchStaff, createStaff, updateStaff, deleteStaff } from "../../lib/api";
 
-interface GroomingStaffTabProps {
-  showStaffModal: boolean;
-  setShowStaffModal: (show: boolean) => void;
-  editingStaff: StaffMember | null;
-  setEditingStaff: (staff: StaffMember | null) => void;
-  staffForm: {
+interface GroomingStaffPageProps {
+  selectedBranchId: string;
+  branches: Branch[];
+  branchMap: Record<string, string>;
+}
+
+export function GroomingStaffPage({ selectedBranchId, branches, branchMap }: GroomingStaffPageProps) {
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [staffForm, setStaffForm] = useState<{
     name: string;
     phone: string;
     about: string;
@@ -15,34 +24,43 @@ interface GroomingStaffTabProps {
     status: "Active" | "Inactive";
     image: File | null;
     branchId: string;
-  };
-  setStaffForm: React.Dispatch<React.SetStateAction<any>>;
-  staffSubmitting: boolean;
-  setStaffSubmitting: (submitting: boolean) => void;
-  staffPreviewUrl: string | null;
-  staffList: StaffMember[];
-  setStaffList: React.Dispatch<React.SetStateAction<StaffMember[]>>;
-  branches: Branch[];
-  branchMap: Record<string, string>;
-  setError: (error: string) => void;
-}
+  }>({
+    name: "",
+    phone: "",
+    about: "",
+    experience: "",
+    status: "Active",
+    image: null,
+    branchId: ""
+  });
+  const [staffSubmitting, setStaffSubmitting] = useState(false);
 
-export function GroomingStaffTab({
-  showStaffModal,
-  setShowStaffModal,
-  editingStaff,
-  setEditingStaff,
-  staffForm,
-  setStaffForm,
-  staffSubmitting,
-  setStaffSubmitting,
-  staffPreviewUrl,
-  staffList,
-  setStaffList,
-  branches,
-  branchMap,
-  setError
-}: GroomingStaffTabProps) {
+  async function loadStaff() {
+    try {
+      setLoading(true);
+      const data = await fetchStaff();
+      setStaffList(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load grooming staff");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  const staffPreviewUrl = useMemo(() => {
+    if (staffForm.image) return URL.createObjectURL(staffForm.image);
+    if (editingStaff) return editingStaff.imageUrl || "";
+    return "";
+  }, [staffForm.image, editingStaff]);
+
+  const filteredStaffList = useMemo(() => {
+    if (selectedBranchId === "all") return staffList;
+    return staffList.filter((s) => s.branchId === selectedBranchId);
+  }, [staffList, selectedBranchId]);
 
   const resetForm = () => {
     setEditingStaff(null);
@@ -73,6 +91,7 @@ export function GroomingStaffTab({
           image: staffForm.image
         });
         setStaffList((prev) => prev.map((s) => s._id === updated._id ? updated : s));
+        setNotice("Staff member updated successfully!");
       } else {
         const created = await createStaff({
           name: staffForm.name,
@@ -84,6 +103,7 @@ export function GroomingStaffTab({
           image: staffForm.image
         });
         setStaffList((prev) => [created, ...prev]);
+        setNotice("Grooming staff member added successfully!");
       }
       resetForm();
     } catch (err: any) {
@@ -93,8 +113,47 @@ export function GroomingStaffTab({
     }
   };
 
+  async function handleStaffDelete(id: string, name: string) {
+    if (!window.confirm(`Remove ${name} from staff?`)) return;
+    setError("");
+    try {
+      await deleteStaff(id);
+      setStaffList((prev) => prev.filter((x) => x._id !== id));
+      setNotice("Staff member removed successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete staff member");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-teal-700">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
+        <span className="font-bold">Loading grooming staff...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex justify-between items-center">
+          <span>{notice}</span>
+          <button onClick={() => setNotice("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Staff Form Modal Overlay */}
       {showStaffModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -172,7 +231,7 @@ export function GroomingStaffTab({
                     type="number"
                     min="0"
                     value={staffForm.experience}
-                    onChange={(e) => setDocForm ? setStaffForm({ ...staffForm, experience: e.target.value }) : setStaffForm({ ...staffForm, experience: e.target.value })}
+                    onChange={(e) => setStaffForm({ ...staffForm, experience: e.target.value })}
                     placeholder="e.g. 3"
                     className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
                   />
@@ -259,7 +318,7 @@ export function GroomingStaffTab({
           </button>
         </div>
 
-        {staffList.length === 0 ? (
+        {filteredStaffList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
             <Scissors size={40} />
             <p className="font-semibold">No grooming staff added yet</p>
@@ -267,7 +326,7 @@ export function GroomingStaffTab({
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {staffList.map((s) => (
+            {filteredStaffList.map((s) => (
               <div key={s._id} className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50">
                 {/* Avatar */}
                 {s.imageUrl ? (
@@ -328,15 +387,7 @@ export function GroomingStaffTab({
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (!confirm(`Remove ${s.name} from staff?`)) return;
-                      try {
-                        await deleteStaff(s._id);
-                        setStaffList((prev) => prev.filter((x) => x._id !== s._id));
-                      } catch (err: any) {
-                        setError(err.message || "Failed to delete staff member");
-                      }
-                    }}
+                    onClick={() => handleStaffDelete(s._id, s.name)}
                     className="rounded bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2 text-xs font-bold transition"
                     title="Remove Staff"
                   >

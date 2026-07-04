@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { X, Stethoscope, UploadCloud, Plus, Trash2, Edit } from "lucide-react";
-import { Doctor, Branch, Review } from "../../lib/api";
+import { Doctor, Branch, Review, fetchDoctors, createDoctor, updateDoctor, deleteDoctor } from "../../lib/api";
 
-interface DoctorsTabProps {
-  showDoctorModal: boolean;
-  setShowDoctorModal: (show: boolean) => void;
-  editingDoctor: Doctor | null;
-  docForm: {
+interface DoctorsPageProps {
+  selectedBranchId: string;
+  branches: Branch[];
+  branchMap: Record<string, string>;
+}
+
+export function DoctorsPage({ selectedBranchId, branches, branchMap }: DoctorsPageProps) {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [docForm, setDocForm] = useState<{
     name: string;
     specialty: string;
     experience: string;
@@ -22,53 +32,227 @@ interface DoctorsTabProps {
     username: string;
     password: string;
     branchId: string;
-  };
-  setDocForm: React.Dispatch<React.SetStateAction<any>>;
-  docPreviewUrl: string | null;
-  docSubmitting: boolean;
-  handleDoctorSubmit: (e: React.FormEvent) => void;
-  cancelEditDoctor: () => void;
-  branches: Branch[];
-  newReviewerName: string;
-  setNewReviewerName: (name: string) => void;
-  newReviewRating: string;
-  setNewReviewRating: (rating: string) => void;
-  newReviewComment: string;
-  setNewReviewComment: (comment: string) => void;
-  handleAddReview: () => void;
-  handleDeleteReview: (idx: number, e: React.MouseEvent) => void;
-  filteredDoctors: Doctor[];
-  branchMap: Record<string, string>;
-  startEditDoctor: (doc: Doctor) => void;
-  handleDoctorDelete: (id: string) => void;
-}
+  }>({
+    name: "",
+    specialty: "",
+    experience: "",
+    status: "Active",
+    image: null,
+    education: "Graduated",
+    bio: "",
+    languages: "English, Hindi",
+    expertise: "Dog, Cat",
+    jobsCompleted: "0",
+    rating: "5.0",
+    reviews: [],
+    username: "",
+    password: "",
+    branchId: ""
+  });
+  const [docSubmitting, setDocSubmitting] = useState(false);
 
-export function DoctorsTab({
-  showDoctorModal,
-  setShowDoctorModal,
-  editingDoctor,
-  docForm,
-  setDocForm,
-  docPreviewUrl,
-  docSubmitting,
-  handleDoctorSubmit,
-  cancelEditDoctor,
-  branches,
-  newReviewerName,
-  setNewReviewerName,
-  newReviewRating,
-  setNewReviewRating,
-  newReviewComment,
-  setNewReviewComment,
-  handleAddReview,
-  handleDeleteReview,
-  filteredDoctors,
-  branchMap,
-  startEditDoctor,
-  handleDoctorDelete
-}: DoctorsTabProps) {
+  // Mock Review states
+  const [newReviewerName, setNewReviewerName] = useState("");
+  const [newReviewRating, setNewReviewRating] = useState("5");
+  const [newReviewComment, setNewReviewComment] = useState("");
+
+  async function loadDoctors() {
+    try {
+      setLoading(true);
+      const data = await fetchDoctors();
+      setDoctors(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load doctors");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDoctors();
+  }, []);
+
+  const docPreviewUrl = useMemo(() => {
+    if (docForm.image) return URL.createObjectURL(docForm.image);
+    if (editingDoctor) return editingDoctor.imageUrl || "";
+    return "";
+  }, [docForm.image, editingDoctor]);
+
+  const filteredDoctors = useMemo(() => {
+    if (selectedBranchId === "all") return doctors;
+    return doctors.filter((d) => d.branchId === selectedBranchId);
+  }, [doctors, selectedBranchId]);
+
+  function startEditDoctor(doctor: Doctor) {
+    setEditingDoctor(doctor);
+    setDocForm({
+      name: doctor.name,
+      specialty: doctor.specialty,
+      experience: String(doctor.experience),
+      status: doctor.status,
+      image: null,
+      education: doctor.education || "Graduated",
+      bio: doctor.bio || "",
+      languages: doctor.languages ? doctor.languages.join(", ") : "English, Hindi",
+      expertise: doctor.expertise ? doctor.expertise.join(", ") : "Dog, Cat",
+      jobsCompleted: String(doctor.jobsCompleted || 0),
+      rating: String(doctor.rating || 5.0),
+      reviews: doctor.reviews || [],
+      username: doctor.username || "",
+      password: "",
+      branchId: doctor.branchId || ""
+    });
+    setShowDoctorModal(true);
+  }
+
+  function cancelEditDoctor() {
+    setEditingDoctor(null);
+    setDocForm({
+      name: "",
+      specialty: "",
+      experience: "",
+      status: "Active",
+      image: null,
+      education: "Graduated",
+      bio: "",
+      languages: "English, Hindi",
+      expertise: "Dog, Cat",
+      jobsCompleted: "0",
+      rating: "5.0",
+      reviews: [],
+      username: "",
+      password: "",
+      branchId: ""
+    });
+    setShowDoctorModal(false);
+  }
+
+  async function handleDoctorSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!docForm.name || !docForm.specialty || !docForm.experience) return;
+    setError("");
+    setDocSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", docForm.name);
+      formData.append("specialty", docForm.specialty);
+      formData.append("experience", docForm.experience);
+      formData.append("status", docForm.status);
+      formData.append("education", docForm.education);
+      formData.append("bio", docForm.bio);
+      
+      const langs = docForm.languages.split(",").map((l) => l.trim()).filter(Boolean);
+      formData.append("languages", JSON.stringify(langs));
+
+      const exps = docForm.expertise.split(",").map((e) => e.trim()).filter(Boolean);
+      formData.append("expertise", JSON.stringify(exps));
+
+      formData.append("jobsCompleted", docForm.jobsCompleted);
+      formData.append("rating", docForm.rating);
+      formData.append("reviews", JSON.stringify(docForm.reviews));
+
+      if (docForm.username) {
+        formData.append("username", docForm.username.trim());
+      }
+      if (docForm.password) {
+        formData.append("password", docForm.password);
+      }
+      if (docForm.branchId) {
+        formData.append("branchId", docForm.branchId);
+      }
+
+      if (docForm.image) {
+        formData.append("image", docForm.image);
+      }
+
+      if (editingDoctor) {
+        const saved = await updateDoctor(editingDoctor._id, formData);
+        setDoctors((current) => current.map((d) => (d._id === editingDoctor._id ? saved : d)));
+        setNotice("Doctor profile updated successfully!");
+        cancelEditDoctor();
+      } else {
+        const saved = await createDoctor(formData);
+        setDoctors((current) => [saved, ...current]);
+        setNotice("New doctor onboarded successfully!");
+        cancelEditDoctor();
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to save doctor profile");
+    } finally {
+      setDocSubmitting(false);
+    }
+  }
+
+  async function handleDoctorDelete(id: string) {
+    if (!window.confirm("Are you sure you want to delete this doctor?")) return;
+    setError("");
+    try {
+      await deleteDoctor(id);
+      setDoctors((current) => current.filter((d) => d._id !== id));
+      setNotice("Doctor deleted successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete doctor");
+    }
+  }
+
+  function handleAddReview(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!newReviewerName || !newReviewComment) {
+      alert("Please enter reviewer name and comment");
+      return;
+    }
+    const newRev: Review = {
+      reviewerName: newReviewerName,
+      rating: Number(newReviewRating),
+      comment: newReviewComment,
+      date: new Date().toISOString()
+    };
+    setDocForm((prev) => ({
+      ...prev,
+      reviews: [...prev.reviews, newRev]
+    }));
+    setNewReviewerName("");
+    setNewReviewComment("");
+    setNewReviewRating("5");
+  }
+
+  function handleDeleteReview(index: number, e: React.MouseEvent) {
+    e.preventDefault();
+    setDocForm((prev) => ({
+      ...prev,
+      reviews: prev.reviews.filter((_, idx) => idx !== index)
+    }));
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-teal-700">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
+        <span className="font-bold">Loading doctor profiles...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex justify-between items-center">
+          <span>{notice}</span>
+          <button onClick={() => setNotice("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Doctor Form Modal Overlay */}
       {showDoctorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">

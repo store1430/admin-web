@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface User {
   id: string;
@@ -8,11 +8,16 @@ interface User {
   status: "Active" | "Inactive";
 }
 
-interface UsersTabProps {
-  users: User[];
-}
+const mockUsers: User[] = [
+  { id: "user-1", name: "Aarav", email: "aarav.patel@example.com", petName: "Bruno (Golden Retriever)", status: "Active" },
+  { id: "user-2", name: "Priya Singh", email: "priya.singh@example.com", petName: "Luna (Persian Cat)", status: "Active" },
+  { id: "user-3", name: "Rohan Das", email: "rohan.das@example.com", petName: "Rocky (German Shepherd)", status: "Inactive" },
+  { id: "user-4", name: "Ananya Iyer", email: "ananya.iyer@example.com", petName: "Milo (Beagle)", status: "Active" }
+];
 
-export function UsersTab({ users }: UsersTabProps) {
+export function UsersPage() {
+  const [users] = useState<User[]>(mockUsers);
+
   return (
     <div className="rounded-2xl border border-teal-100 bg-white shadow-soft overflow-hidden w-full">
       <div className="border-b border-teal-100 px-5 py-4">
@@ -64,4 +69,3 @@ export function UsersTab({ users }: UsersTabProps) {
     </div>
   );
 }
-export type { User };

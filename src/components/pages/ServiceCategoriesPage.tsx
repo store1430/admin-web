@@ -1,60 +1,211 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { UploadCloud, Edit, Trash2, X, IndianRupee } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ServiceCategory, CategoryStatus } from "../../lib/api";
+import {
+  ServiceCategory,
+  CategoryStatus,
+  fetchCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  addSubCategory,
+  deleteSubCategory
+} from "../../lib/api";
 
-interface ServiceCategoriesTabProps {
-  categories: ServiceCategory[];
-  form: {
-    name: string;
-    status: CategoryStatus;
-    image: File | null;
-  };
-  setForm: React.Dispatch<React.SetStateAction<any>>;
-  previewUrl: string | null;
-  submitting: boolean;
-  handleCategorySubmit: (e: React.FormEvent) => void;
-  editingCategory: ServiceCategory | null;
-  cancelEditCategory: () => void;
-  startEditCategory: (c: ServiceCategory) => void;
-  handleCategoryDelete: (id: string) => void;
-  selectedCategory: ServiceCategory | null;
-  setSelectedCategory: (c: ServiceCategory | null) => void;
-  subForm: {
+interface CategoryFormState {
+  name: string;
+  status: CategoryStatus;
+  image: File | null;
+}
+
+const initialForm: CategoryFormState = {
+  name: "",
+  status: "Active",
+  image: null
+};
+
+export function ServiceCategoriesPage() {
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const [form, setForm] = useState<CategoryFormState>(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
+
+  // Subcategory form state
+  const [subForm, setSubForm] = useState<{
     name: string;
     price: string;
     status: CategoryStatus;
     image: File | null;
-  };
-  setSubForm: React.Dispatch<React.SetStateAction<any>>;
-  subPreviewUrl: string | null;
-  subSubmitting: boolean;
-  handleSubCategorySubmit: (e: React.FormEvent) => void;
-  handleSubCategoryDelete: (id: string) => void;
-}
+  }>({ name: "", price: "", status: "Active", image: null });
+  const [subSubmitting, setSubSubmitting] = useState(false);
 
-export function ServiceCategoriesTab({
-  categories,
-  form,
-  setForm,
-  previewUrl,
-  submitting,
-  handleCategorySubmit,
-  editingCategory,
-  cancelEditCategory,
-  startEditCategory,
-  handleCategoryDelete,
-  selectedCategory,
-  setSelectedCategory,
-  subForm,
-  setSubForm,
-  subPreviewUrl,
-  subSubmitting,
-  handleSubCategorySubmit,
-  handleSubCategoryDelete
-}: ServiceCategoriesTabProps) {
+  async function loadCategoriesData() {
+    try {
+      setLoading(true);
+      const data = await fetchCategories();
+      setCategories(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load service categories");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadCategoriesData();
+  }, []);
+
+  const previewUrl = useMemo(() => {
+    if (form.image) return URL.createObjectURL(form.image);
+    if (editingCategory) return editingCategory.imageUrl;
+    return "";
+  }, [form.image, editingCategory]);
+
+  const subPreviewUrl = useMemo(() => {
+    if (subForm.image) return URL.createObjectURL(subForm.image);
+    return "";
+  }, [subForm.image]);
+
+  function startEditCategory(category: ServiceCategory) {
+    setEditingCategory(category);
+    setForm({
+      name: category.name,
+      status: category.status,
+      image: null
+    });
+  }
+
+  function cancelEditCategory() {
+    setEditingCategory(null);
+    setForm(initialForm);
+  }
+
+  async function handleCategoryDelete(categoryId: string) {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+    setError("");
+    try {
+      await deleteCategory(categoryId);
+      setCategories((current) => current.filter((c) => c._id !== categoryId));
+      setNotice("Category deleted successfully!");
+      if (selectedCategory?._id === categoryId) {
+        setSelectedCategory(null);
+      }
+      if (editingCategory?._id === categoryId) {
+        cancelEditCategory();
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to delete category");
+    }
+  }
+
+  async function handleCategorySubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    try {
+      if (editingCategory) {
+        const updated = await updateCategory(editingCategory._id, {
+          name: form.name,
+          status: form.status,
+          image: form.image
+        });
+        setCategories((current) => current.map((c) => (c._id === editingCategory._id ? updated : c)));
+        setNotice("Category updated successfully!");
+        cancelEditCategory();
+      } else {
+        if (!form.image) {
+          throw new Error("Please choose a category image");
+        }
+        const saved = await createCategory({ name: form.name, status: form.status, image: form.image });
+        setCategories((current) => [saved, ...current]);
+        setNotice("New category created successfully!");
+        setForm(initialForm);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to save category");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSubCategorySubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedCategory) return;
+    if (!subForm.image) {
+      setError("Please choose a sub-category image");
+      return;
+    }
+    setError("");
+    setSubSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", subForm.name);
+      formData.append("price", subForm.price);
+      formData.append("status", subForm.status);
+      formData.append("image", subForm.image);
+
+      const updated = await addSubCategory(selectedCategory._id, formData);
+      
+      setCategories((current) => current.map((c) => (c._id === updated._id ? updated : c)));
+      setSelectedCategory(updated);
+      setNotice("Sub-category added successfully!");
+      setSubForm({ name: "", price: "", status: "Active", image: null });
+    } catch (err: any) {
+      setError(err.message || "Failed to add subcategory");
+    } finally {
+      setSubSubmitting(false);
+    }
+  }
+
+  async function handleSubCategoryDelete(subId: string) {
+    if (!selectedCategory) return;
+    if (!window.confirm("Are you sure you want to delete this sub-category?")) return;
+    try {
+      const updated = await deleteSubCategory(selectedCategory._id, subId);
+      setCategories((current) => current.map((c) => (c._id === updated._id ? updated : c)));
+      setSelectedCategory(updated);
+      setNotice("Sub-category deleted successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete subcategory");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-teal-700">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
+        <span className="font-bold">Loading service categories...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex justify-between items-center">
+          <span>{notice}</span>
+          <button onClick={() => setNotice("")}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[400px_1fr]">
         {/* Add/Edit Category Form */}
         <form onSubmit={handleCategorySubmit} className="rounded-2xl border border-teal-100 bg-white p-5 shadow-soft h-fit">

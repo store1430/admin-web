@@ -1,24 +1,84 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Calendar, CheckCircle, IndianRupee, Layers } from "lucide-react";
-import { Appointment } from "../../lib/api";
+import { Appointment, ServiceCategory, Doctor, fetchAppointments, fetchCategories, fetchDoctors } from "../../lib/api";
 
-interface DashboardTabProps {
-  stats: {
-    totalBookings: number;
-    todayBookings: number;
-    totalRevenue: number;
-    categoriesCount: number;
-    doctorsCount: number;
-  };
-  filteredAppointments: Appointment[];
+interface DashboardPageProps {
+  selectedBranchId: string;
   branchMap: Record<string, string>;
 }
 
-export function DashboardTab({
-  stats,
-  filteredAppointments,
-  branchMap
-}: DashboardTabProps) {
+export function DashboardPage({ selectedBranchId, branchMap }: DashboardPageProps) {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        const [cats, appts, docs] = await Promise.all([
+          fetchCategories(),
+          fetchAppointments(),
+          fetchDoctors()
+        ]);
+        setCategories(cats);
+        setAppointments(appts);
+        setDoctors(docs);
+      } catch (err: any) {
+        setError(err.message || "Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboardData();
+  }, []);
+
+  const filteredAppointments = useMemo(() => {
+    if (selectedBranchId === "all") return appointments;
+    return appointments.filter((a) => a.branchId === selectedBranchId);
+  }, [appointments, selectedBranchId]);
+
+  const filteredDoctors = useMemo(() => {
+    if (selectedBranchId === "all") return doctors;
+    return doctors.filter((d) => d.branchId === selectedBranchId);
+  }, [doctors, selectedBranchId]);
+
+  const stats = useMemo(() => {
+    const totalBookings = filteredAppointments.length;
+    const today = new Date().toDateString();
+    const todayBookings = filteredAppointments.filter(
+      (a) => new Date(a.appointmentDate).toDateString() === today
+    ).length;
+    const totalRevenue = filteredAppointments.reduce((sum) => sum + 1200, 0); // Mock average price Rs. 1200
+    
+    return {
+      totalBookings,
+      todayBookings,
+      totalRevenue,
+      categoriesCount: categories.length,
+      doctorsCount: filteredDoctors.length
+    };
+  }, [filteredAppointments, categories, filteredDoctors]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-teal-700">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-teal mr-3"></div>
+        <span className="font-bold">Loading dashboard metrics...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 font-semibold">
+        ⚠️ {error}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
