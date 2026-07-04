@@ -277,13 +277,8 @@ export function AdminDashboard() {
           {/* Header */}
           <div className="mb-8 flex flex-col gap-4 border-b border-teal-100 pb-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-teal-600">
-                {isBranchDashboard ? "Branch Dashboard" : "Admin Dashboard"}
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-clinic-ink">
-                {isBranchDashboard && selectedBranch
-                  ? `${selectedBranch.name} - ${visibleNavItems.find((n) => n.id === activeTab)?.label || "Dashboard"}`
-                  : visibleNavItems.find((n) => n.id === activeTab)?.label || "Dashboard"}
+              <h2 className="text-3xl font-bold text-clinic-ink">
+                {visibleNavItems.find((n) => n.id === activeTab)?.label || "Dashboard"}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-4">
