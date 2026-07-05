@@ -43,7 +43,10 @@ export function Sidebar({
 }: SidebarProps) {
   
   const visibleNavItems = React.useMemo(() => {
-    return isBranchDashboard ? navItems.filter((item) => item.id !== "branches") : navItems;
+    if (isBranchDashboard) {
+      return navItems.filter((item) => item.id !== "branches");
+    }
+    return navItems;
   }, [isBranchDashboard]);
 
   return (

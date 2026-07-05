@@ -20,6 +20,7 @@ export interface ServiceCategory {
   status: CategoryStatus;
   imageUrl: string;
   subCategories: SubCategory[];
+  branchId?: string;
   createdAt: string;
 }
 
@@ -28,6 +29,7 @@ export interface CreateCategoryPayload {
   status: CategoryStatus;
   image: File;
   branchId?: string;
+  basePrice?: number;
 }
 
 export interface Appointment {
@@ -89,6 +91,9 @@ export async function createCategory(payload: CreateCategoryPayload): Promise<Se
   if (payload.branchId) {
     formData.append("branchId", payload.branchId);
   }
+  if (payload.basePrice !== undefined) {
+    formData.append("basePrice", String(payload.basePrice));
+  }
 
   const response = await fetch(`${API_URL}/service-categories`, {
     method: "POST",
@@ -148,13 +153,14 @@ export async function deleteCategory(categoryId: string): Promise<{ success: boo
 
 export async function updateCategory(
   categoryId: string,
-  payload: { name?: string; status?: string; image?: File | null; branchId?: string }
+  payload: { name?: string; status?: string; image?: File | null; branchId?: string; basePrice?: number }
 ): Promise<ServiceCategory> {
   const formData = new FormData();
   if (payload.name) formData.append("name", payload.name);
   if (payload.status) formData.append("status", payload.status);
   if (payload.image) formData.append("image", payload.image);
   if (payload.branchId) formData.append("branchId", payload.branchId);
+  if (payload.basePrice !== undefined) formData.append("basePrice", String(payload.basePrice));
 
   const response = await fetch(`${API_URL}/service-categories/${categoryId}`, {
     method: "PUT",
@@ -285,6 +291,8 @@ export interface Branch {
   username?: string;
   password?: string;
   isActive: boolean;
+  videoCallPrice?: number;
+  availableDates?: string[];
   createdAt?: string;
 }
 

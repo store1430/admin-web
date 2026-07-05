@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { UploadCloud, Edit, Trash2, X, IndianRupee, MapPin } from "lucide-react";
+import { UploadCloud, Edit, Trash2, X, IndianRupee, MapPin, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ServiceCategory,
@@ -17,12 +17,14 @@ interface CategoryFormState {
   name: string;
   status: CategoryStatus;
   image: File | null;
+  basePrice: string;
 }
 
 const initialForm: CategoryFormState = {
   name: "",
   status: "Active",
-  image: null
+  image: null,
+  basePrice: ""
 };
 
 interface ServiceCategoriesPageProps {
@@ -40,6 +42,7 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
   const [submitting, setSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
   const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   // Subcategory form state
   const [subForm, setSubForm] = useState<{
@@ -91,13 +94,16 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
     setForm({
       name: category.name,
       status: category.status,
-      image: null
+      image: null,
+      basePrice: category.basePrice !== undefined ? String(category.basePrice) : ""
     });
+    setShowCategoryModal(true);
   }
 
   function cancelEditCategory() {
     setEditingCategory(null);
     setForm(initialForm);
+    setShowCategoryModal(false);
   }
 
   async function handleCategoryDelete(categoryId: string) {
@@ -133,7 +139,8 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
           name: form.name,
           status: form.status,
           image: form.image,
-          branchId: selectedBranchId
+          branchId: selectedBranchId,
+          basePrice: form.basePrice ? Number(form.basePrice) : 0
         });
         setCategories((current) => current.map((c) => (c._id === editingCategory._id ? updated : c)));
         setNotice("Category updated successfully!");
@@ -146,11 +153,13 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
           name: form.name,
           status: form.status,
           image: form.image,
-          branchId: selectedBranchId
+          branchId: selectedBranchId,
+          basePrice: form.basePrice ? Number(form.basePrice) : 0
         });
         setCategories((current) => [saved, ...current]);
         setNotice("New category created successfully!");
         setForm(initialForm);
+        setShowCategoryModal(false);
       }
     } catch (err: any) {
       setError(err.message || "Failed to save category");
@@ -247,81 +256,125 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[400px_1fr]">
-        {/* Add/Edit Category Form */}
-        <form onSubmit={handleCategorySubmit} className="rounded-2xl border border-teal-100 bg-white p-5 shadow-soft h-fit">
-          <h3 className="mb-1 text-lg font-bold text-clinic-ink">
-            {editingCategory ? "Edit Service Category" : "Add Service Category"}
-          </h3>
-          <p className="mb-5 text-xs text-slate-400 font-semibold">
-            Adding service details scoped to <strong>{selectedBranchName}</strong>
-          </p>
+      {/* Top Header Card */}
+      <div className="rounded-2xl border border-teal-100 bg-white shadow-soft">
+        <div className="border-b border-teal-100 px-5 py-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-clinic-ink">Active Service Categories</h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Manage service categories and rates for {selectedBranchName}</p>
+          </div>
+          <button
+            onClick={() => {
+              cancelEditCategory();
+              setShowCategoryModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-clinic-teal px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-100 transition hover:bg-teal-800"
+          >
+            <Plus size={16} />
+            Add Service Category
+          </button>
+        </div>
+      </div>
 
-          <label className="mb-4 block">
-            <span className="mb-2 block text-sm font-semibold text-slate-600">Category Name</span>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Grooming"
-              className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
-            />
-          </label>
-
-          <label className="mb-4 block">
-            <span className="mb-2 block text-sm font-semibold text-slate-600">Status</span>
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value as CategoryStatus })}
-              className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </label>
-
-          <label className="mb-5 block cursor-pointer rounded border-2 border-dashed border-teal-200 bg-teal-50/60 p-5 text-center transition hover:border-clinic-teal">
-            {previewUrl ? (
-              <img src={previewUrl} alt="Category preview" className="mx-auto h-36 w-full rounded object-cover" />
-            ) : (
-              <div className="grid place-items-center gap-2 py-6 text-teal-700">
-                <UploadCloud size={32} />
-                <span className="text-sm font-semibold">Choose category image</span>
-              </div>
-            )}
-            <input
-              required={!editingCategory}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
-            />
-          </label>
-
-          <div className="flex gap-3">
-            {editingCategory && (
-              <button
-                type="button"
-                onClick={cancelEditCategory}
-                className="flex-1 rounded border border-slate-200 bg-white px-5 py-3 font-bold text-slate-500 transition hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-            )}
+      {/* Category Form Modal Overlay */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-teal-100 bg-white p-6 shadow-2xl animate-scaleUp">
+            {/* Close Button */}
             <button
-              disabled={submitting}
-              className="flex-1 rounded bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              onClick={cancelEditCategory}
+              className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 transition p-1 rounded-full hover:bg-slate-50"
             >
-              {submitting ? "Saving..." : editingCategory ? "Update Category" : `Save for ${selectedBranchName}`}
+              <X size={20} />
             </button>
-          </div>
-        </form>
 
-        {/* Category Library */}
-        <div className="rounded-2xl border border-teal-100 bg-white shadow-soft overflow-hidden h-fit">
-          <div className="border-b border-teal-100 px-5 py-4">
-            <h3 className="text-lg font-bold text-clinic-ink">Category Library</h3>
+            <form onSubmit={handleCategorySubmit} className="space-y-6">
+              <h3 className="text-xl font-extrabold text-clinic-ink flex items-center gap-2 border-b border-slate-100 pb-3">
+                {editingCategory ? "Edit Service Category" : "Add Service Category"}
+              </h3>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Category Name *</span>
+                <input
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Grooming"
+                  className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Status *</span>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as CategoryStatus })}
+                  className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm bg-white"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Price (₹)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.basePrice}
+                  onChange={(e) => setForm({ ...form, basePrice: e.target.value })}
+                  placeholder="e.g. 500"
+                  className="w-full rounded border border-slate-200 px-4 py-3 outline-none transition focus:border-clinic-teal focus:ring-4 focus:ring-teal-100 text-sm"
+                />
+                <p className="mt-1.5 text-[10px] text-slate-400 font-semibold leading-relaxed">
+                  Note: This price is used directly if the service does not have sub-categories (like Video Consultations).
+                </p>
+              </label>
+
+              <label className="block cursor-pointer rounded border-2 border-dashed border-teal-200 bg-teal-50/60 p-5 text-center transition hover:border-clinic-teal">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Category preview" className="mx-auto h-36 w-full rounded object-cover shadow-sm" />
+                ) : (
+                  <div className="grid place-items-center gap-2 py-6 text-teal-700">
+                    <UploadCloud size={32} />
+                    <span className="text-sm font-semibold">Choose category image</span>
+                  </div>
+                )}
+                <input
+                  required={!editingCategory}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
+                />
+              </label>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={cancelEditCategory}
+                  className="flex-1 rounded border border-slate-200 bg-white px-5 py-3 font-bold text-slate-500 transition hover:bg-slate-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={submitting}
+                  className="flex-1 rounded bg-clinic-teal px-5 py-3 font-bold text-white shadow-lg shadow-teal-200 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm"
+                >
+                  {submitting ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
+      )}
+
+      {/* Category Library */}
+      <div className="rounded-2xl border border-teal-100 bg-white shadow-soft overflow-hidden h-fit w-full">
+        <div className="border-b border-teal-100 px-5 py-4">
+          <h3 className="text-lg font-bold text-clinic-ink">Category Library</h3>
+        </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left">
@@ -397,7 +450,6 @@ export function ServiceCategoriesPage({ selectedBranchId, branches }: ServiceCat
             </table>
           </div>
         </div>
-      </div>
 
       {/* Inline Subcategory Drawer */}
       <AnimatePresence>

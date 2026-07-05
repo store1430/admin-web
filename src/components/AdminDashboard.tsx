@@ -26,6 +26,7 @@ import { BranchesPage } from "./pages/BranchesPage";
 
 
 
+
 export function AdminDashboard() {
   const branchIdFromUrl = useMemo(() => {
     const match = window.location.pathname.match(/^\/branch\/([^/]+)/);
@@ -412,6 +413,8 @@ export function AdminDashboard() {
                 />
               </motion.div>
             )}
+
+
           </AnimatePresence>
         </section>
       </main>
